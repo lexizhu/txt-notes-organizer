@@ -12,7 +12,8 @@ For architecture, data flow, safety boundaries, and design trade-offs, see [Syst
 
 ## Release Status
 
-- Current public release target: `v0.1.0`
+- Distribution: source code from the `main` branch; no tagged GitHub Release is currently published
+- `v0.1.0` is a future version target, not a required download or installation step
 - Supported and tested platform: macOS
 - CI matrix targets: Python 3.10, 3.12, and 3.14
 - Windows and Linux are not currently supported or tested
@@ -54,7 +55,7 @@ ollama pull qwen3:4b
 
 ## Quick Start
 
-For a versioned download, visit [GitHub Releases](https://github.com/lexizhu/txt-notes-organizer/releases) and choose `v0.1.0` once it is published. Download the source archive from that release and extract the entire folder. Before a release is available, **Code → Download ZIP** provides the current branch snapshot, which may differ from a tagged release. This is a Python source distribution, not a standalone macOS app; Python and the local model must be installed separately for the full workflow.
+On the [repository page](https://github.com/lexizhu/txt-notes-organizer), select the `main` branch and choose **Code → Download ZIP**, or clone the repository. Extract the entire folder before running the tool. This downloads the current branch snapshot, not a fixed tagged release; a separate GitHub Release is not required. This is a Python source distribution, not a standalone macOS app. Python is required for the full application; Ollama and its model must be installed separately for the recommended local workflow.
 
 If you only want to preview the interface, open `output/demo-review.html`. This pre-generated page needs no Python, Ollama, or local service.
 
@@ -361,11 +362,11 @@ TXT Notes Organizer 是一个以本地优先为原则的 macOS 纯文本笔记�
 
 本项目采用人类主导、AI 协助的方式完成：产品方向、安全边界和验收由人主导，AI 协助实现、测试和文档。它不是只能照原样使用的固定产品，欢迎根据自己的笔记习惯修改分类、prompt、界面和处理规则。
 
-当前公开版本目标为 `v0.1.0`，只支持并测试了 macOS；Windows 和 Linux 尚未实现或验证。建议始终保留原始 TXT 的备份。
+当前通过 `main` 分支分享源码，尚未发布带标签的 GitHub Release。`v0.1.0` 是未来版本目标，不是下载或安装的前提。只支持并测试了 macOS；Windows 和 Linux 尚未实现或验证。建议始终保留原始 TXT 的备份。
 
 ### 快速开始
 
-需要固定版本时，请在 [GitHub Releases](https://github.com/lexizhu/txt-notes-organizer/releases) 中选择正式发布后的 `v0.1.0`，下载该版本源码压缩包并完整解压。版本尚未发布时，**Code → Download ZIP** 下载的是当前分支快照，可能与正式标签版本不同。本工具以 Python 源码形式提供，不是独立的 macOS 安装程序；完整使用需要另外安装 Python 和本地模型。
+在[仓库页面](https://github.com/lexizhu/txt-notes-organizer)选择 `main` 分支，点击 **Code → Download ZIP**，或 clone 仓库。运行前请完整解压。下载的是当前分支快照，而不是固定标签版本；不需要等待单独的 GitHub Release。本工具以 Python 源码形式提供，不是独立的 macOS 安装程序。完整应用需要 Python；推荐的本地处理方式还需另外安装 Ollama 和模型。
 
 如果只想预览界面，直接打开 `output/demo-review.html`。这个预生成页面不需要 Python、Ollama 或本地服务。
 

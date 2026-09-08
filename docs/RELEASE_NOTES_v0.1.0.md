@@ -1,6 +1,6 @@
 # TXT Notes Organizer v0.1.0
 
-> Draft / 草稿 — Planned release date / 计划发布日期: 2026-09-08. The tag, public release, and downloadable release artifact have not yet been created or verified. 标签、公开发布和正式下载包尚未创建或完成验证。
+> Future release draft / 未来版本草稿 — Updated / 更新于: 2026-09-08. This file is preparation material for a possible `v0.1.0` release, not an announcement of a published version. The current sharing plan is source code from `main` via Code → Download ZIP or Git clone; a tag, GitHub Release, and custom ZIP are optional and deferred. 本文件用于准备未来可能发布的 `v0.1.0`，不是已发布版本的公告。当前计划通过 `main` 分支的 Code → Download ZIP 或 Git clone 分享源码；标签、GitHub Release 和自制 ZIP 均为可选项，暂不办理。
 
 ## English
 
@@ -22,7 +22,7 @@ TXT Notes Organizer is a local-first macOS tool for capturing, organizing, and r
 ### Requirements and getting started
 
 1. Use macOS with Python 3.10 or later. The Python application uses only the standard library; no Python package installation is required.
-2. Download the source archive for `v0.1.0` from [GitHub Releases](https://github.com/lexizhu/txt-notes-organizer/releases) once published, and extract the whole folder. Keep its files and subdirectories together.
+2. On the [repository page](https://github.com/lexizhu/txt-notes-organizer), select `main` and choose **Code → Download ZIP**, or clone the repository. Extract the whole folder and keep its files and subdirectories together. No tagged release is required.
 3. For an immediate preview, open `output/demo-review.html`. This requires no Python, Ollama, or local server.
 4. For the recommended local workflow, install [Ollama](https://ollama.com/download/mac) and download `qwen3:4b` using `ollama pull qwen3:4b`. Python, Ollama, and model weights are not included in the archive.
 5. Keep Ollama running, double-click `Open Notes Tool.command`, and click **整理 (Organize)** in the browser. Alternatively, run `python3 launch_tool.py` from the extracted project folder.
@@ -42,11 +42,12 @@ See the [README](../README.md) for macOS first-launch guidance, note separators,
 
 ### Verification status
 
-- Baseline commit `521a863`: 217 local unit tests passed on Python 3.14.2; its GitHub Actions Tests workflow also completed successfully.
-- The baseline offline demo displayed nine records, project filtering worked, and read-only controls were verified in a browser.
-- On 2026-09-08, a temporary 66-file candidate ZIP including the release documentation was extracted and passed all 217 unit tests on Python 3.14.2 in about 32 seconds. Archive integrity, extracted file contents, launcher executable permissions, empty runtime data, and fictional demo records were checked.
-- Candidate testing left the source project unchanged; the temporary ZIP, extracted copy, and test directories were removed. This verification summary was added afterward. A final archive built from the release commit, its checksum, and CI for that commit remain pending.
-- Live model end-to-end validation is not claimed by these unit-test results.
+- Code baseline `ff8ef4a` fixes a test cleanup race by waiting for background workers to finish diagnostics and final writes before removing temporary directories.
+- On Python 3.14.2, all 223 unit tests passed locally. Twenty repeated regression rounds (180 test executions) also passed without leftover job workers; test temporary files were cleaned.
+- GitHub Actions Tests run #3 for `ff8ef4a` succeeded. The workflow tests the same code on macOS with Python 3.10, 3.12, and 3.14, with `fail-fast: false` so each version can finish independently.
+- The unchanged offline demo was previously checked in a browser: nine records displayed, project filtering worked, and read-only controls were verified.
+- The earlier custom ZIP was built from `00fe22c`, before the cleanup fix. It is not the current code and must not be offered as the current download. Use `main` instead; producing another custom ZIP is not required for source sharing.
+- These results apply to the named code baseline, not to every future revision or real-model end-to-end behavior. This documentation update does not constitute a new CI result or a published Release.
 
 ### License and feedback
 
@@ -74,7 +75,7 @@ TXT Notes Organizer 是一个本地优先的 macOS 纯文本笔记整理工具�
 ### 环境要求与快速开始
 
 1. 使用 macOS 和 Python 3.10 或更高版本。Python 程序只依赖标准库，无需安装额外 Python 包。
-2. 正式发布后，在 [GitHub Releases](https://github.com/lexizhu/txt-notes-organizer/releases) 下载 `v0.1.0` 的源码压缩包，完整解压并保留目录结构。
+2. 在[仓库页面](https://github.com/lexizhu/txt-notes-organizer)选择 `main`，点击 **Code → Download ZIP**，或 clone 仓库。完整解压并保留目录结构，不需要等待带标签的版本发布。
 3. 只想预览时，直接打开 `output/demo-review.html`，不需要 Python、Ollama 或本地服务。
 4. 推荐本地使用：安装 [Ollama](https://ollama.com/download/mac)，并通过 `ollama pull qwen3:4b` 下载默认模型。压缩包不包含 Python、Ollama 或模型权重。
 5. 保持 Ollama 运行，双击 `Open Notes Tool.command` 或 `打开笔记工具.command`，在浏览器中点击“整理”。也可以在解压后的项目目录执行 `python3 launch_tool.py`。
@@ -94,11 +95,12 @@ macOS 首次运行提示、记录分隔规则、云端配置与故障排查详�
 
 ### 验证状态
 
-- 基线提交 `521a863`：在 Python 3.14.2 下通过 217 项本地单元测试；对应 GitHub Actions Tests 工作流也已成功完成。
-- 基线离线演示页已在浏览器中验证：显示 9 条记录、项目筛选正常、只读控制生效。
-- 2026-09-08，包含发布文档的 66 文件临时候选 ZIP 解压后，在 Python 3.14.2 下通过全部 217 项单元测试，耗时约 32 秒。已核对压缩包完整性、解压文件内容、启动脚本可执行权限、空运行数据和虚构演示记录。
-- 候选验证没有改写原项目；临时 ZIP、解压副本和测试目录均已清理。本验证摘要在测试后补充。从发布提交构建的正式包、其校验值以及该提交的 CI 结果仍待验证。
-- 上述单元测试结果不代表已经验证真实模型的完整端到端使用流程。
+- 代码基线 `ff8ef4a` 修复了测试清理竞态：删除临时目录前，等待后台线程完成诊断写入及最终收尾。
+- 在 Python 3.14.2 下通过全部 223 项本地单元测试；20 轮重复回归、共 180 次测试也通过，未残留后台任务线程，测试临时文件已清理。
+- `ff8ef4a` 对应的 GitHub Actions Tests 第 3 次运行成功。工作流在 macOS 上分别使用 Python 3.10、3.12、3.14 测试同一份代码，并设置 `fail-fast: false`，让各版本独立完成。
+- 未改动的离线演示页此前已在浏览器中验证：显示 9 条记录、项目筛选正常、只读控制生效。
+- 较早制作的自定义 ZIP 基于修复前的 `00fe22c`，不是当前代码，不能作为当前下载包提供。请通过 `main` 获取源码；公开源码不要求重新制作自定义 ZIP。
+- 上述结果对应指定代码基线，不代表所有未来修改或真实模型的完整端到端流程均已验证。本次文档更新也不代表新的 CI 结果或已经创建 Release。
 
 ### 许可证与反馈
 
@@ -106,14 +108,12 @@ macOS 首次运行提示、记录分隔规则、云端配置与故障排查详�
 
 问题和建议可提交到 [GitHub Issues](https://github.com/lexizhu/txt-notes-organizer/issues)，请只使用虚构示例。安全问题请遵循 [SECURITY.md](../SECURITY.md)，不要在公开 issue 中放入私人数据。
 
-## Maintainer publication gate / 维护者发布前确认
+## Sharing scope / 分享范围
 
-This section is a preparation checklist, not evidence of completed publication. Update the verification paragraphs with final results, resolve documentation links for the GitHub Release body, and remove this checklist and the draft banner from the published release text only after the applicable checks pass.
+Before changing repository visibility, inspect source files, commit history and identities, and GitHub-hosted material such as Actions logs and attachments. Repository-local Git credentials and files outside the repository are not uploaded by a normal Git push. Obtain explicit approval before making the repository public; later making it private cannot recall copies already downloaded. Verify that GitHub Private Vulnerability Reporting is enabled for the public repository, as described in the security policy.
 
-本节是准备清单，不表示发布已经完成。完成适用检查后，更新上方验证结果，将 GitHub Release 正文中的文档链接改为可访问的版本链接，再从正式发布正文中移除本清单和草稿提示。
+改变可见性前，应检查源码、历史提交与作者信息，以及 GitHub 上的 Actions 日志和附件等内容。仓库本地的 Git 凭据配置和仓库外文件不会随正常 Git push 上传。公开前需要明确确认；之后改回私有也无法收回已经下载的副本。按安全政策核对公开仓库是否启用 GitHub 私密漏洞报告功能。
 
-- [ ] Confirm the actual release date and final commit. / 确认实际发布日期和最终提交。
-- [ ] Run tests against the final candidate and verify CI. / 测试最终候选版本并核对 CI。
-- [ ] Build, extract, inspect, and test the release archive; record its checksum. / 构建、解压、检查并测试发布包，记录校验值。
-- [ ] Inspect public-facing CI logs and enable GitHub Private Vulnerability Reporting when available for the public repository. / 检查将公开的 CI 日志，并在公开仓库中启用 GitHub 私密漏洞报告功能。
-- [ ] Obtain explicit approval before making the repository public or publishing the tag and Release. / 公开仓库、发布标签及 Release 前取得明确确认。
+If a tagged release is prepared later, select and verify its exact commit, update these notes and their links, and remove the draft banner from the actual Release body. Custom ZIP attachments and checksums are optional; GitHub provides source archives for tags.
+
+以后需要带标签的版本时，再选定并验证准确提交，更新说明和链接，从实际 Release 正文中移除草稿提示。自定义 ZIP 附件及校验文件是可选项；GitHub 会为标签提供源码压缩包。
