@@ -42,6 +42,7 @@ from purge import PurgeArtifacts, PurgePaths, purge_generated_data
 
 class LocalServerTests(unittest.TestCase):
 	def setUp(self) -> None:
+		self.job_managers: list[OrganizeJobManager | ReprocessJobManager] = []
 		self.temporary_directory = tempfile.TemporaryDirectory()
 		root = Path(self.temporary_directory.name)
 		self.release_pipeline = threading.Event()
@@ -61,7 +62,7 @@ class LocalServerTests(unittest.TestCase):
 			self.release_pipeline.wait(timeout=2)
 			return True
 
-		self.manager = OrganizeJobManager(root / "organize.lock", pipeline)
+		self.manager = self.make_organize_manager(root / "organize.lock", pipeline)
 		self.entries_path = root / "entries.json"
 		entry = {
 			"id": "record one",
@@ -119,7 +120,7 @@ class LocalServerTests(unittest.TestCase):
 			self.model_store,
 		)
 		self.reprocess_calls = []
-		self.reprocess_job_manager = ReprocessJobManager(
+		self.reprocess_job_manager = self.make_reprocess_manager(
 			self.reprocess_plan_manager,
 			root / "organize.lock",
 			lambda target_ids, components, report, cancel_check: self.reprocess_calls.append(
@@ -144,11 +145,24 @@ class LocalServerTests(unittest.TestCase):
 		self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
 		self.thread.start()
 
+	def make_organize_manager(self, *args, **kwargs) -> OrganizeJobManager:
+		manager = OrganizeJobManager(*args, **kwargs)
+		self.job_managers.append(manager)
+		return manager
+
+	def make_reprocess_manager(self, *args, **kwargs) -> ReprocessJobManager:
+		manager = ReprocessJobManager(*args, **kwargs)
+		self.job_managers.append(manager)
+		return manager
+
 	def tearDown(self) -> None:
 		self.release_pipeline.set()
 		self.server.shutdown()
 		self.server.server_close()
 		self.thread.join(timeout=2)
+		self.assertFalse(self.thread.is_alive(), "HTTP server did not stop")
+		for manager in self.job_managers:
+			manager.wait_for_workers(timeout=5)
 		self.temporary_directory.cleanup()
 
 	def request(self, method: str, path: str, *, headers=None, body=None):
@@ -259,13 +273,14 @@ class LocalServerTests(unittest.TestCase):
 			report(progress("failed", "排版失败", "排版结果无效，已保留原文显示。", 60))
 			return True
 
-		manager = OrganizeJobManager(Path(self.temporary_directory.name) / "fallback.lock", fallback_pipeline, diagnostic_store=store)
+		manager = self.make_organize_manager(Path(self.temporary_directory.name) / "fallback.lock", fallback_pipeline, diagnostic_store=store)
 		job = manager.start()
 		for _ in range(100):
 			if manager.get(job["id"])["status"] == "succeeded":
 				break
 			time.sleep(0.01)
 
+		manager.wait_for_workers(timeout=5)
 		report = store.list()[0]
 		self.assertEqual(report["status"], "succeeded_with_fallback")
 		self.assertEqual(report["error_code"], "FORMAT_INVALID")
@@ -708,7 +723,7 @@ class LocalServerTests(unittest.TestCase):
 		})
 		self.model_store.save_model_settings(settings)
 		calls = []
-		manager = ReprocessJobManager(
+		manager = self.make_reprocess_manager(
 			self.reprocess_plan_manager,
 			self.manager.lock_path,
 			lambda target_ids, components, report, cancel_check: calls.append((target_ids, components)) or True,
@@ -787,7 +802,7 @@ class LocalServerTests(unittest.TestCase):
 	def test_reprocess_job_writes_terminal_diagnostic(self) -> None:
 		root = Path(self.temporary_directory.name)
 		store = DiagnosticStore(root / "reprocess-diagnostics.json")
-		manager = ReprocessJobManager(
+		manager = self.make_reprocess_manager(
 			self.reprocess_plan_manager,
 			root / "reprocess-diagnostic.lock",
 			lambda target_ids, components, report, cancel_check: True,
@@ -830,7 +845,7 @@ class LocalServerTests(unittest.TestCase):
 			observed_cancel.append(cancel_check())
 			return False
 
-		manager = ReprocessJobManager(
+		manager = self.make_reprocess_manager(
 			self.reprocess_plan_manager, self.manager.lock_path, cancellable_executor
 		)
 		self.server.reprocess_job_manager = manager
@@ -1009,7 +1024,7 @@ class LocalServerTests(unittest.TestCase):
 			report(progress("classifying", "AI 分类", "迟到进度", 50))
 			return True
 
-		manager = OrganizeJobManager(root / "cancel.lock", slow_pipeline)
+		manager = self.make_organize_manager(root / "cancel.lock", slow_pipeline)
 		job = manager.start()
 		self.assertTrue(started.wait(timeout=1))
 		cancelling = manager.cancel(job["id"])
@@ -1023,7 +1038,7 @@ class LocalServerTests(unittest.TestCase):
 			time.sleep(0.01)
 		self.assertEqual(finished["status"], "cancelled")
 		self.assertFalse((root / f".organize-cancel-{job['id']}").exists())
-		second = OrganizeJobManager(root / "cancel.lock", lambda report: True)
+		second = self.make_organize_manager(root / "cancel.lock", lambda report: True)
 		self.assertEqual(second.start()["status"], "queued")
 
 	def test_cancel_wait_limit_uses_current_model_timeout(self) -> None:
@@ -1045,7 +1060,7 @@ class LocalServerTests(unittest.TestCase):
 
 	def test_organize_cancel_is_rejected_after_page_rebuild_starts(self) -> None:
 		root = Path(self.temporary_directory.name)
-		manager = OrganizeJobManager(root / "late-cancel.lock", lambda report: True)
+		manager = self.make_organize_manager(root / "late-cancel.lock", lambda report: True)
 		manager.jobs["late"] = {
 			"id": "late", "status": "running", "cancel_requested": False,
 			"progress": progress("rebuilding", "重建页面", "正在生成页面", 90),
@@ -1055,7 +1070,7 @@ class LocalServerTests(unittest.TestCase):
 
 	def test_organize_cancel_marker_failure_does_not_change_job_state(self) -> None:
 		root = Path(self.temporary_directory.name)
-		manager = OrganizeJobManager(root / "marker-failure.lock", lambda report: True)
+		manager = self.make_organize_manager(root / "marker-failure.lock", lambda report: True)
 		manager.jobs["write-failure"] = {
 			"id": "write-failure", "status": "running", "cancel_requested": False,
 			"progress": progress("classifying", "AI 分类", "正在处理", 30),
@@ -1086,7 +1101,7 @@ class LocalServerTests(unittest.TestCase):
 	def test_process_lock_blocks_a_second_manager(self) -> None:
 		first_job = self.manager.start()
 		self.assertTrue(self.pipeline_started.wait(timeout=1))
-		second_manager = OrganizeJobManager(self.manager.lock_path, lambda report: True)
+		second_manager = self.make_organize_manager(self.manager.lock_path, lambda report: True)
 
 		with self.assertRaises(JobConflictError):
 			second_manager.start()
@@ -1131,7 +1146,7 @@ class LocalServerTests(unittest.TestCase):
 			})
 			return False
 
-		manager = OrganizeJobManager(root / "failure.lock", failed_pipeline)
+		manager = self.make_organize_manager(root / "failure.lock", failed_pipeline)
 		job = manager.start()
 		for _ in range(100):
 			current = manager.get(job["id"])
@@ -1143,7 +1158,7 @@ class LocalServerTests(unittest.TestCase):
 		self.assertEqual(current["status"], "failed")
 		self.assertEqual(current["error"], "第 2 条排版失败：模型没有返回结果。")
 		self.assertEqual(current["progress"]["stage"], "failed")
-		second_manager = OrganizeJobManager(root / "failure.lock", lambda report: True)
+		second_manager = self.make_organize_manager(root / "failure.lock", lambda report: True)
 		second_job = second_manager.start()
 		for _ in range(100):
 			second_current = second_manager.get(second_job["id"])

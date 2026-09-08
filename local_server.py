@@ -15,6 +15,7 @@ import secrets
 import subprocess
 import sys
 import threading
+import time
 import uuid
 from datetime import datetime
 from http import HTTPStatus
@@ -990,6 +991,34 @@ class ReprocessPlanChangedError(RuntimeError):
 	pass
 
 
+class _JobWorkers:
+	"""Track workers through diagnostics and final cleanup, not just job status."""
+
+	def __init__(self) -> None:
+		self.lock = threading.Lock()
+		self.threads: list[threading.Thread] = []
+
+	def start(self, thread: threading.Thread) -> None:
+		with self.lock:
+			self.threads = [worker for worker in self.threads if worker.is_alive()]
+			thread.start()
+			self.threads.append(thread)
+
+	def wait(self, timeout: float) -> None:
+		if not math.isfinite(timeout) or timeout < 0:
+			raise ValueError("Worker timeout must be finite and non-negative")
+		deadline = time.monotonic() + timeout
+		with self.lock:
+			workers = list(self.threads)
+		# Never hold a manager state lock while waiting for its final writes.
+		for worker in workers:
+			worker.join(max(0.0, deadline - time.monotonic()))
+			if worker.is_alive():
+				raise TimeoutError("Background job worker did not finish before cleanup")
+		with self.lock:
+			self.threads = [worker for worker in self.threads if worker.is_alive()]
+
+
 class ReprocessJobManager:
 	"""Run one confirmed reprocessing task while excluding normal organize work."""
 
@@ -1026,6 +1055,11 @@ class ReprocessJobManager:
 		self.active_job_id: str | None = None
 		self.consumed_plan_ids: set[str] = set()
 		self.cancel_events: dict[str, threading.Event] = {}
+		self._workers = _JobWorkers()
+
+	def wait_for_workers(self, timeout: float = 5.0) -> None:
+		"""After stopping new requests, wait for existing workers and final writes."""
+		self._workers.wait(timeout)
 
 	def start(self, payload: dict[str, Any]) -> dict[str, Any]:
 		if not isinstance(payload, dict) or payload.keys() - self.ALLOWED_KEYS:
@@ -1088,7 +1122,7 @@ class ReprocessJobManager:
 				name=f"reprocess-{job_id}",
 				daemon=True,
 			)
-			thread.start()
+			self._workers.start(thread)
 			return dict(job)
 
 	def get(self, job_id: str) -> dict[str, Any] | None:
@@ -1199,6 +1233,11 @@ class OrganizeJobManager:
 		self.jobs: dict[str, dict[str, Any]] = {}
 		self.active_job_id: str | None = None
 		self.state_lock = threading.Lock()
+		self._workers = _JobWorkers()
+
+	def wait_for_workers(self, timeout: float = 5.0) -> None:
+		"""After stopping new requests, wait for existing workers and final writes."""
+		self._workers.wait(timeout)
 
 	def start(self) -> dict[str, Any]:
 		with self.state_lock:
@@ -1234,7 +1273,7 @@ class OrganizeJobManager:
 				name=f"organize-{job_id}",
 				daemon=True,
 			)
-			thread.start()
+			self._workers.start(thread)
 			return dict(job)
 
 	def get(self, job_id: str) -> dict[str, Any] | None:
