@@ -1,4 +1,4 @@
-# My Notes Tool
+# TXT Notes Organizer
 
 > **中文说明见本文末尾。** A concise Chinese guide is available at the end of this README.
 
@@ -53,6 +53,8 @@ ollama pull qwen3:4b
 ```
 
 ## Quick Start
+
+For a versioned download, visit [GitHub Releases](https://github.com/lexizhu/txt-notes-organizer/releases) and choose `v0.1.0` once it is published. Download the source archive from that release and extract the entire folder. Before a release is available, **Code → Download ZIP** provides the current branch snapshot, which may differ from a tagged release. This is a Python source distribution, not a standalone macOS app; Python and the local model must be installed separately for the full workflow.
 
 If you only want to preview the interface, open `output/demo-review.html`. This pre-generated page needs no Python, Ollama, or local service.
 
@@ -355,13 +357,15 @@ MIT. See [LICENSE](LICENSE).
 
 ## 中文简要说明
 
-My Notes Tool 是一个以本地优先为原则的 macOS 纯文本笔记整理工具。你可以继续使用普通 `.txt` 文件写笔记，后台 watcher 会在一条记录以连续三个空白行结束后捕获它，再由本地 Ollama 整理分类、状态、事件时间、排版和表格结构，最后生成一个可离线打开的 `output/review.html`。
+TXT Notes Organizer 是一个以本地优先为原则的 macOS 纯文本笔记整理工具。你可以继续使用普通 `.txt` 文件写笔记，后台 watcher 会在一条记录以连续三个空白行结束后捕获它，再由本地 Ollama 整理分类、状态、事件时间、排版和表格结构，最后生成一个可离线打开的 `output/review.html`。
 
 本项目采用人类主导、AI 协助的方式完成：产品方向、安全边界和验收由人主导，AI 协助实现、测试和文档。它不是只能照原样使用的固定产品，欢迎根据自己的笔记习惯修改分类、prompt、界面和处理规则。
 
 当前公开版本目标为 `v0.1.0`，只支持并测试了 macOS；Windows 和 Linux 尚未实现或验证。建议始终保留原始 TXT 的备份。
 
 ### 快速开始
+
+需要固定版本时，请在 [GitHub Releases](https://github.com/lexizhu/txt-notes-organizer/releases) 中选择正式发布后的 `v0.1.0`，下载该版本源码压缩包并完整解压。版本尚未发布时，**Code → Download ZIP** 下载的是当前分支快照，可能与正式标签版本不同。本工具以 Python 源码形式提供，不是独立的 macOS 安装程序；完整使用需要另外安装 Python 和本地模型。
 
 如果只想预览界面，直接打开 `output/demo-review.html`。这个预生成页面不需要 Python、Ollama 或本地服务。
 
