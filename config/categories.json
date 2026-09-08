@@ -1,0 +1,44 @@
+[
+	{
+		"code": "work",
+		"labels": {
+			"zh-CN": "工作",
+			"en": "Work"
+		}
+	},
+	{
+		"code": "meeting",
+		"labels": {
+			"zh-CN": "会议",
+			"en": "Meeting"
+		}
+	},
+	{
+		"code": "idea",
+		"labels": {
+			"zh-CN": "想法",
+			"en": "Idea"
+		}
+	},
+	{
+		"code": "learning",
+		"labels": {
+			"zh-CN": "学习",
+			"en": "Learning"
+		}
+	},
+	{
+		"code": "life",
+		"labels": {
+			"zh-CN": "生活",
+			"en": "Life"
+		}
+	},
+	{
+		"code": "other",
+		"labels": {
+			"zh-CN": "其他",
+			"en": "Other"
+		}
+	}
+]

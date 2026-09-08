@@ -1,0 +1,31 @@
+Fictional project status table
+
+Workstream  Owner  Status  Due date
+Documentation  Alex Example  In progress  2026-09-05
+Screenshots  Morgan Sample  Not started  2026-09-07
+Packaging  Taylor Demo  Complete  2026-08-28
+
+Review the two unfinished fictional workstreams next Monday.
+
+
+
+Fictional comparison table
+
+Option  Privacy  Setup effort
+Local model  High  Medium
+Cloud API  Depends on provider  Low
+
+The values above are illustrative and are not product guarantees.
+
+
+
+Irregular sample data
+
+Name  Score
+Example A  8  Extra note
+Example B
+
+This intentionally irregular block demonstrates the safe raw-text fallback when columns do not align.
+
+
+

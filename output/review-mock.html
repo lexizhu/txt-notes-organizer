@@ -1,0 +1,3049 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>笔记回顾 - 交互原型</title>
+  <link rel="icon" id="page-icon" type="image/png" sizes="32x32" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAaElEQVR42mNgwAHM4if+pyZmIAZQ21KSHEMvy7E6gt6WYzhiZDuAkKKbTz+hYHIBTkeMOmBQOgDd0pHnAGKjgJDe4e+A0VwwmgtGc8FoLhjNBcPDAYTahbR0wGizfPB0zQZF53SguucA3JubhfNBjN4AAAAASUVORK5CYII=">
+  <script>
+    if (window.location.protocol === "http:" && ["127.0.0.1", "localhost"].includes(window.location.hostname)) {
+      document.querySelector("#page-icon").href = "/favicon.ico?v=notebook-v3";
+    }
+  </script>
+  <style>
+    :root {
+      color-scheme: light;
+      --navy: #365f91;
+      --navy-hover: #2f5583;
+      --navy-soft: #eaf0f7;
+      --text: #33363d;
+      --muted: #737984;
+      --subtle: #9aa0aa;
+      --page: #f7f8fa;
+      --surface: #ffffff;
+      --surface-hover: #fafbfd;
+      --line: #e5e8ed;
+      --line-strong: #d7dce3;
+      --orange: #a25c27;
+      --orange-soft: #f8eadf;
+      --green: #3d7658;
+      --green-soft: #e5f0e9;
+      --gray-soft: #eff1f4;
+      --shadow: 0 8px 28px rgba(31, 58, 95, 0.055);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-width: 320px;
+      color: var(--text);
+      background: var(--page);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", sans-serif;
+      letter-spacing: 0;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    button, input, select { font: inherit; letter-spacing: 0; }
+
+    .shell {
+      width: min(1160px, calc(100% - 48px));
+      margin: 0 auto;
+      padding: 64px 0 96px;
+    }
+
+    .masthead {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 32px;
+      min-height: 112px;
+      padding: 28px 34px;
+      color: #ffffff;
+      background: var(--navy);
+      border-radius: 10px;
+      box-shadow: var(--shadow);
+    }
+
+    .eyebrow {
+      margin: 0 0 9px;
+      color: rgba(255, 255, 255, 0.64);
+      font-size: 11px;
+      font-weight: 650;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      color: #ffffff;
+      font-size: 30px;
+      font-weight: 640;
+      line-height: 1.2;
+      letter-spacing: 0;
+    }
+
+    .summary {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: rgba(255, 255, 255, 0.7);
+      white-space: nowrap;
+    }
+
+    .summary strong {
+      display: inline-grid;
+      min-width: 32px;
+      height: 32px;
+      place-items: center;
+      padding: 0 9px;
+      color: var(--navy);
+      background: #ffffff;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 32px;
+    }
+
+    .summary span { font-size: 13px; }
+
+    .masthead-tools {
+      display: grid;
+      justify-items: end;
+      gap: 8px;
+    }
+
+    .page-actions { display: flex; align-items: center; gap: 8px; }
+
+    .page-action {
+      height: 34px;
+      padding: 0 12px;
+      color: rgba(255, 255, 255, 0.78);
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 7px;
+      font-size: 12px;
+      font-weight: 620;
+      cursor: pointer;
+    }
+
+    .page-action:hover:not(:disabled),
+    .page-action.is-active { color: var(--navy); background: #ffffff; }
+    .page-action.is-active { border-color: #ffffff; box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.24); }
+    .page-action:disabled { cursor: not-allowed; opacity: 0.48; }
+    .service-status { margin: 0; color: rgba(255, 255, 255, 0.66); font-size: 11px; }
+
+    .organize-progress {
+      margin-top: 12px;
+      padding: 16px 18px;
+      background: #ffffff;
+      border: 1px solid var(--line-strong);
+      border-radius: 9px;
+      box-shadow: var(--shadow);
+    }
+
+    .organize-progress[hidden] { display: none; }
+
+    .progress-heading {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+    }
+
+    .progress-title { display: flex; align-items: center; gap: 9px; min-width: 0; }
+    .progress-title strong { color: var(--navy); font-size: 13px; }
+    .progress-metrics { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+    .progress-elapsed::before { content: "已用时 "; }
+
+    .progress-spinner {
+      width: 15px;
+      height: 15px;
+      flex: 0 0 auto;
+      border: 2px solid #cfdae7;
+      border-top-color: var(--navy);
+      border-radius: 50%;
+      animation: progress-spin 700ms linear infinite;
+    }
+
+    .organize-progress.is-complete .progress-spinner { border: 0; animation: none; }
+    .organize-progress.is-complete .progress-spinner::before { content: "✓"; color: var(--navy); font-weight: 700; }
+    .organize-progress.is-failed { border-color: #e1b8ae; background: #fff9f7; }
+    .organize-progress.is-failed .progress-spinner { border: 0; animation: none; }
+    .organize-progress.is-failed .progress-spinner::before { content: "!"; color: #a33f2c; font-weight: 750; }
+
+    @keyframes progress-spin { to { transform: rotate(360deg); } }
+
+    .progress-track {
+      height: 5px;
+      margin-top: 12px;
+      overflow: hidden;
+      background: #e9edf2;
+      border-radius: 999px;
+    }
+
+    .progress-fill {
+      width: 0;
+      height: 100%;
+      background: var(--navy);
+      border-radius: inherit;
+      transition: width 300ms ease;
+    }
+
+    .organize-progress.is-running .progress-fill { position: relative; overflow: hidden; }
+    .organize-progress.is-running .progress-fill::after {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.55), transparent);
+      content: "";
+      animation: progress-sweep 1.2s ease-in-out infinite;
+    }
+
+    @keyframes progress-sweep { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
+
+    .progress-message { margin: 9px 0 0; color: #5c6470; font-size: 12px; line-height: 1.5; }
+
+    .progress-dismiss {
+      display: block;
+      margin: 11px 0 0 auto;
+      padding: 2px 0;
+      color: #7b8490;
+      background: transparent;
+      border: 0;
+      font-size: 11px;
+      text-decoration: underline;
+      cursor: pointer;
+    }
+
+    .progress-dismiss[hidden] { display: none; }
+    .progress-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 11px; }
+    .progress-cancel {
+      padding: 3px 9px;
+      color: #8f3f30;
+      background: #fff9f7;
+      border: 1px solid #ddb8af;
+      border-radius: 6px;
+      font-size: 11px;
+      cursor: pointer;
+    }
+    .progress-cancel:disabled { cursor: wait; opacity: 0.6; }
+    .progress-cancel[hidden] { display: none; }
+    .organize-progress.is-cancelled { border-color: #d8dce2; background: #fafbfc; }
+    .organize-progress.is-cancelled .progress-spinner { border: 0; animation: none; }
+    .organize-progress.is-cancelled .progress-spinner::before { content: "×"; color: #737984; font-weight: 750; }
+
+    .progress-steps {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 5px;
+      margin: 13px 0 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .progress-step {
+      padding: 7px 8px;
+      color: var(--subtle);
+      background: #f5f6f8;
+      border-radius: 6px;
+      font-size: 10px;
+      text-align: center;
+    }
+
+    .progress-step.is-current {
+      padding: 6px 7px;
+      color: var(--navy);
+      background: var(--navy-soft);
+      border: 2px solid #6f91b8;
+      box-shadow: 0 5px 12px rgba(54, 95, 145, 0.2);
+      font-weight: 700;
+      transform: translateY(-1px);
+    }
+
+    .progress-step.is-done { color: #65788f; background: #edf2f7; }
+    .progress-step.is-done::before { content: "✓ "; }
+    .organize-progress.is-failed .progress-step.is-current {
+      color: #8f3f30;
+      background: #f7e8e4;
+      box-shadow: inset 0 0 0 1px #e6c4bc;
+    }
+
+    .toolbar {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+      gap: 12px;
+      margin: 12px 0 0;
+      padding: 13px 15px;
+      background: rgba(255, 255, 255, 0.76);
+      border: 1px solid var(--line);
+      border-radius: 9px;
+    }
+
+    .project-tabs-row {
+      min-width: 0;
+      margin-top: 46px;
+      padding: 9px;
+      background: var(--navy);
+      border-radius: 10px;
+      box-shadow: var(--shadow);
+    }
+
+    .project-tabs-label { display: none; }
+
+    .project-tabs-bar {
+      display: flex;
+      align-items: stretch;
+      gap: 8px;
+      min-width: 0;
+      padding: 0;
+      background: transparent;
+      border: 0;
+      border-radius: 7px;
+    }
+
+    .project-tabs {
+      display: flex;
+      flex: 1 1 auto;
+      gap: 3px;
+      min-width: 0;
+      overflow: hidden;
+    }
+
+    .project-tab {
+      position: relative;
+      display: inline-flex;
+      flex: 0 0 auto;
+      align-items: center;
+      gap: 7px;
+      height: 36px;
+      padding: 0 11px;
+      color: rgba(255, 255, 255, 0.72);
+      background: transparent;
+      border: 0;
+      border-radius: 7px;
+      font-size: 12px;
+      font-weight: 520;
+      white-space: nowrap;
+      cursor: grab;
+      transition: color 150ms ease, background-color 150ms ease, box-shadow 150ms ease, opacity 150ms ease, transform 150ms ease;
+    }
+
+    .project-tab:hover { color: #ffffff; background: rgba(255, 255, 255, 0.12); }
+    .project-tab[hidden] { display: none; }
+    .project-tab[data-project="all"] { cursor: pointer; }
+    .project-tabs.is-dragging,
+    .project-tabs.is-dragging .project-tab { cursor: grabbing; }
+
+    .project-tab.dragging {
+      z-index: 2;
+      color: var(--navy);
+      background: #ffffff;
+      box-shadow: 0 10px 22px rgba(20, 43, 70, 0.32);
+      opacity: 0.78;
+      transform: translateY(-3px) scale(1.07);
+      cursor: grabbing;
+    }
+
+    .drag-placeholder {
+      position: relative;
+      flex: 0 0 auto;
+      width: 0;
+      height: 36px;
+      margin: 0;
+      background: rgba(255, 255, 255, 0.16);
+      border: 2px dashed rgba(255, 255, 255, 0.9);
+      border-radius: 7px;
+      opacity: 0;
+      pointer-events: none;
+      transition: width 180ms ease, opacity 180ms ease, margin 180ms ease;
+    }
+
+    .drag-placeholder.visible {
+      margin: 0 3px;
+      opacity: 1;
+    }
+
+    .drag-placeholder::after {
+      content: "放在这里";
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      color: rgba(255, 255, 255, 0.92);
+      font-size: 10px;
+      font-weight: 650;
+      white-space: nowrap;
+    }
+
+    .project-tab.drop-confirm {
+      animation: drop-confirm 480ms cubic-bezier(0.2, 0.9, 0.25, 1.25) both;
+    }
+
+    @keyframes drop-confirm {
+      0% { color: #ffffff; background: #8aa8cc; box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.8); transform: translateY(-5px) scale(1.08); }
+      45% { color: var(--navy); background: #ffffff; box-shadow: 0 0 0 5px rgba(255, 255, 255, 0.3), 0 7px 16px rgba(20, 43, 70, 0.24); transform: translateY(1px) scale(0.98); }
+      100% { transform: translateY(0) scale(1); }
+    }
+
+    .project-tab[aria-selected="true"] {
+      color: var(--navy);
+      background: #ffffff;
+      box-shadow: 0 2px 6px rgba(20, 43, 70, 0.2);
+      font-weight: 650;
+    }
+
+    .tab-close {
+      display: inline-grid;
+      width: 17px;
+      height: 17px;
+      place-items: center;
+      margin-right: -5px;
+      padding: 0;
+      color: currentColor;
+      background: transparent;
+      border: 0;
+      border-radius: 4px;
+      font-size: 15px;
+      line-height: 1;
+      cursor: pointer;
+      opacity: 0.45;
+      transition: color 150ms ease, background-color 150ms ease, opacity 150ms ease;
+    }
+
+    .project-tab:hover .tab-close,
+    .project-tab[aria-selected="true"] .tab-close { opacity: 1; }
+    .tab-close:hover { color: #8b3f46; background: #f4e6e8; }
+
+    .more-projects {
+      position: relative;
+      flex: 0 0 auto;
+    }
+
+    .more-projects summary {
+      display: flex;
+      align-items: center;
+      height: 36px;
+      padding: 0 11px;
+      color: rgba(255, 255, 255, 0.82);
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 7px;
+      font-size: 12px;
+      font-weight: 600;
+      list-style: none;
+      white-space: nowrap;
+      cursor: pointer;
+      transition: color 150ms ease, border-color 150ms ease, background-color 150ms ease;
+    }
+
+    .more-projects summary::-webkit-details-marker { display: none; }
+    .more-projects summary:hover,
+    .more-projects[open] summary { color: var(--navy); background: #ffffff; border-color: #ffffff; }
+
+    .more-menu {
+      position: absolute;
+      top: calc(100% + 7px);
+      right: 0;
+      z-index: 20;
+      min-width: 210px;
+      max-width: min(320px, calc(100vw - 48px));
+      max-height: 280px;
+      padding: 6px;
+      overflow: auto;
+      background: #ffffff;
+      border: 1px solid var(--line-strong);
+      border-radius: 9px;
+      box-shadow: 0 12px 32px rgba(31, 58, 95, 0.16);
+    }
+
+    .more-menu button {
+      display: block;
+      width: 100%;
+      padding: 9px 10px;
+      color: #4f5661;
+      text-align: left;
+      background: transparent;
+      border: 0;
+      border-radius: 6px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: color 150ms ease, background-color 150ms ease;
+    }
+
+    .more-menu button:hover { color: var(--navy); background: var(--navy-soft); }
+    .more-empty { padding: 10px; color: var(--subtle); font-size: 12px; }
+
+    .more-menu .reset-layout {
+      margin-top: 6px;
+      padding-top: 10px;
+      color: var(--subtle);
+      border-top: 1px solid var(--line);
+      border-radius: 0 0 6px 6px;
+      font-size: 11px;
+    }
+
+    .more-menu .reset-layout:hover { color: var(--navy); background: transparent; }
+
+    .field { min-width: 0; }
+
+    .field label {
+      display: block;
+      margin: 0 0 5px 1px;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 600;
+    }
+
+    select {
+      appearance: none;
+      width: 100%;
+      height: 34px;
+      padding: 0 32px 0 11px;
+      color: var(--text);
+      background-color: #fbfcfd;
+      background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+      background-position: calc(100% - 15px) 14px, calc(100% - 11px) 14px;
+      background-size: 4px 4px, 4px 4px;
+      background-repeat: no-repeat;
+      border: 1px solid var(--line-strong);
+      border-radius: 8px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: border-color 150ms ease, background-color 150ms ease, box-shadow 150ms ease;
+    }
+
+    select:hover { background-color: var(--surface); border-color: #b9c3d0; }
+    select option:disabled { color: #b5bac2; background: #f4f5f7; }
+
+    select:has(option:checked:not([value="all"])) {
+      color: var(--navy);
+      background-color: var(--navy-soft);
+      border-color: #aebdd0;
+      font-weight: 600;
+    }
+
+    select:focus, button:focus-visible {
+      outline: 2px solid var(--navy);
+      outline-offset: 2px;
+    }
+
+    .reset {
+      align-self: end;
+      height: 34px;
+      padding: 0 14px;
+      color: #5f6874;
+      background: #ffffff;
+      border: 1px solid var(--line-strong);
+      border-radius: 7px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: color 150ms ease, border-color 150ms ease, background-color 150ms ease, transform 150ms ease;
+    }
+
+    .reset:hover { color: var(--navy); background: var(--navy-soft); border-color: #aebdd0; }
+    .reset:active { transform: translateY(1px); }
+
+    .list-heading {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: center;
+      margin: 42px 2px 14px;
+      padding: 0;
+      color: var(--text);
+    }
+
+    .list-heading h2 {
+      margin: 0;
+      font-size: 17px;
+      font-weight: 650;
+      letter-spacing: 0;
+    }
+
+    .list-heading p { margin: 0; color: var(--subtle); font-size: 11px; }
+
+    .entries {
+      margin-top: 14px;
+      background: var(--surface);
+      border: 1px solid var(--line-strong);
+      border-radius: 10px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .entry {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 145px 245px;
+      grid-template-areas: "text identity meta";
+      gap: 28px;
+      align-items: start;
+      padding: 26px 24px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--line);
+      animation: reveal 280ms ease both;
+      transition: background-color 150ms ease;
+    }
+
+    .entry:last-child { border-bottom: 0; }
+    .entry:nth-child(even) { background: #fcfcfd; }
+    .entry:hover { background: #f6f8fb; }
+
+    @keyframes reveal {
+      from { opacity: 0; transform: translateY(3px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .entry > div:first-child {
+      grid-area: identity;
+      display: grid;
+      align-content: start;
+      justify-items: start;
+      gap: 9px;
+      min-width: 0;
+    }
+
+    .entry-action {
+      padding: 2px 0;
+      color: var(--subtle);
+      background: transparent;
+      border: 0;
+      font-size: 11px;
+      cursor: pointer;
+    }
+
+    .entry-action:hover:not(:disabled) { color: var(--navy); text-decoration: underline; }
+    .entry-action:disabled { cursor: wait; opacity: 0.5; }
+
+    .entry-actions { display: grid; justify-items: start; gap: 4px; }
+    .entry-action-danger { color: #9a5549; }
+    .entry-action-danger:hover:not(:disabled) { color: #873e32; }
+
+    .purge-reminder {
+      margin-top: 12px;
+      padding: 14px 16px;
+      color: #6e3b31;
+      background: #fff5f2;
+      border: 1px solid #e5bcb3;
+      border-radius: 8px;
+      font-size: 12px;
+      line-height: 1.55;
+    }
+
+    .purge-reminder[hidden] { display: none; }
+    .purge-reminder strong { display: block; margin-bottom: 3px; color: #873e32; }
+    .purge-reminder button {
+      float: right;
+      padding: 2px 0;
+      color: #873e32;
+      background: transparent;
+      border: 0;
+      font-size: 11px;
+      text-decoration: underline;
+      cursor: pointer;
+    }
+
+    .purge-dialog {
+      width: min(520px, calc(100% - 32px));
+      padding: 0;
+      color: var(--text);
+      background: #ffffff;
+      border: 1px solid #d8b0a7;
+      border-radius: 9px;
+      box-shadow: 0 24px 70px rgba(26, 36, 50, 0.25);
+    }
+
+    .purge-dialog::backdrop { background: rgba(29, 38, 50, 0.48); }
+    .purge-dialog-content { padding: 24px; }
+    .purge-dialog h2 { margin: 0; color: #6f352b; font-size: 18px; letter-spacing: 0; }
+    .purge-dialog p { margin: 12px 0 0; color: #555e69; font-size: 13px; line-height: 1.65; }
+    .purge-dialog .purge-warning {
+      padding: 12px 13px;
+      color: #6f352b;
+      background: #fff4f1;
+      border-left: 3px solid #b86655;
+    }
+    .purge-dialog .purge-source { color: #727985; font-size: 11px; overflow-wrap: anywhere; }
+    .purge-dialog-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
+    .purge-dialog-actions button {
+      min-width: 88px;
+      height: 34px;
+      padding: 0 13px;
+      border-radius: 7px;
+      font-size: 12px;
+      font-weight: 650;
+      cursor: pointer;
+    }
+    .purge-cancel { color: #555e69; background: #ffffff; border: 1px solid var(--line-strong); }
+    .purge-confirm { color: #ffffff; background: #9a4f40; border: 1px solid #9a4f40; }
+    .purge-confirm:hover:not(:disabled) { background: #863f32; }
+    .purge-dialog-actions button:disabled { cursor: wait; opacity: 0.58; }
+
+    .settings-dialog {
+      width: min(720px, calc(100% - 32px));
+      max-height: min(820px, calc(100vh - 40px));
+      padding: 0;
+      color: var(--text);
+      background: #ffffff;
+      border: 1px solid var(--line-strong);
+      border-radius: 9px;
+      box-shadow: 0 24px 70px rgba(26, 36, 50, 0.25);
+    }
+
+    .settings-dialog::backdrop { background: rgba(29, 38, 50, 0.48); }
+    .diagnostics-dialog {
+      width: min(620px, calc(100vw - 28px));
+      max-height: min(720px, calc(100vh - 28px));
+      padding: 0;
+      border: 1px solid #cfd6df;
+      border-radius: 8px;
+      box-shadow: 0 20px 60px rgba(29, 38, 50, 0.22);
+      color: var(--ink);
+    }
+    .diagnostics-dialog::backdrop { background: rgba(29, 38, 50, 0.48); }
+    .diagnostics-content { padding: 22px; }
+    .diagnostics-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .diagnostics-heading h2 { margin: 0; font-size: 18px; letter-spacing: 0; }
+    .diagnostics-heading button, .diagnostics-actions button {
+      min-height: 34px;
+      border: 1px solid #c7d0db;
+      border-radius: 6px;
+      background: #fff;
+      color: var(--navy);
+      cursor: pointer;
+    }
+    .diagnostics-list { display: grid; gap: 10px; margin: 18px 0; }
+    .diagnostic-item { border: 1px solid #dce2e9; border-radius: 6px; padding: 12px; }
+    .diagnostic-item strong { display: block; font-size: 13px; }
+    .diagnostic-meta, .diagnostic-action { margin: 5px 0 0; color: #687381; font-size: 12px; line-height: 1.5; }
+    .diagnostic-code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: #324f70; }
+    .diagnostics-empty { margin: 18px 0; color: #687381; font-size: 13px; }
+    .diagnostics-actions { display: flex; justify-content: flex-end; gap: 8px; }
+    .diagnostics-actions button { padding: 0 12px; }
+    .settings-form { padding: 24px; }
+    .settings-heading { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+    .settings-heading h2 { margin: 0; color: var(--navy); font-size: 18px; letter-spacing: 0; }
+    .settings-close { padding: 3px 0; color: var(--muted); background: transparent; border: 0; font-size: 12px; cursor: pointer; }
+    .settings-group { margin: 20px 0 0; padding: 0; border: 0; }
+    .settings-group > legend,
+    .settings-label { display: block; margin-bottom: 7px; color: #555e69; font-size: 11px; font-weight: 700; }
+    .required-mark { margin-left: 5px; color: #9a4f40; font-size: 10px; font-weight: 750; }
+    .settings-intro { margin: 12px 0 0; color: #5f6874; font-size: 12px; line-height: 1.55; }
+    .settings-hint { margin: 6px 1px 0; color: var(--muted); font-size: 10px; line-height: 1.45; overflow-wrap: anywhere; }
+    .settings-segments { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+    .settings-segment { position: relative; display: block; }
+    .settings-segment input { position: absolute; opacity: 0; pointer-events: none; }
+    .settings-segment span {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 42px;
+      padding: 0 12px;
+      color: #5e6671;
+      background: #f7f8fa;
+      border: 1px solid var(--line-strong);
+      border-radius: 7px;
+      font-size: 12px;
+      font-weight: 620;
+      cursor: pointer;
+    }
+    .settings-segment small { color: var(--green); font-size: 10px; font-weight: 700; }
+    .settings-segment input:checked + span { color: var(--navy); background: var(--navy-soft); border-color: #6f91b8; box-shadow: inset 0 0 0 1px #6f91b8; }
+    .settings-panel { margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--line); }
+    .settings-panel[hidden] { display: none; }
+    .settings-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 13px; }
+    .settings-grid[hidden] { display: none; }
+    .settings-field { min-width: 0; }
+    .settings-field.is-wide { grid-column: 1 / -1; }
+    .settings-field input,
+    .settings-field select {
+      width: 100%;
+      height: 38px;
+      padding: 0 10px;
+      color: var(--text);
+      background: #ffffff;
+      border: 1px solid var(--line-strong);
+      border-radius: 7px;
+      outline: none;
+    }
+    .settings-field input:focus,
+    .settings-field select:focus { border-color: #6f91b8; box-shadow: 0 0 0 3px rgba(54, 95, 145, 0.12); }
+    .settings-check { display: flex; align-items: flex-start; gap: 8px; color: #555e69; font-size: 12px; line-height: 1.5; }
+    .settings-check input { margin: 2px 0 0; }
+    .cloud-warning { margin: 16px 0 0; padding: 12px 13px; color: #704928; background: #fff8ec; border-left: 3px solid #bd7a38; font-size: 12px; line-height: 1.6; }
+    .secret-status { margin: 7px 0 0; color: var(--muted); font-size: 11px; }
+    .settings-actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-top: 20px; }
+    .settings-result { flex: 1 1 auto; margin: 0; color: var(--muted); font-size: 11px; line-height: 1.45; }
+    .settings-result.is-error { color: #9a4f40; }
+    .settings-actions button { min-width: 88px; height: 34px; padding: 0 13px; border-radius: 7px; font-size: 12px; font-weight: 650; cursor: pointer; }
+    .settings-test { color: var(--navy); background: #ffffff; border: 1px solid #8ca6c4; }
+    .settings-save { color: #ffffff; background: var(--navy); border: 1px solid var(--navy); }
+    .settings-actions button:disabled { cursor: wait; opacity: 0.55; }
+
+    .reprocess-plan { margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--line-strong); }
+    .reprocess-plan[hidden] { display: none; }
+    .reprocess-plan h3 { margin: 0; color: var(--navy); font-size: 14px; letter-spacing: 0; }
+    .reprocess-options { display: grid; gap: 14px; margin-top: 14px; }
+    .reprocess-mode, .reprocess-visibility { display: flex; flex-wrap: wrap; gap: 8px 18px; }
+    .reprocess-mode label, .reprocess-visibility label { display: inline-flex; align-items: center; gap: 6px; min-height: 24px; color: #505966; font-size: 12px; cursor: pointer; }
+    .reprocess-mode input[type="radio"],
+    .reprocess-visibility input[type="radio"],
+    .reprocess-check-list input[type="checkbox"],
+    #reprocess-allow-current {
+      width: 16px; height: 16px; min-height: 0; margin: 0; padding: 0;
+      flex: 0 0 16px; box-shadow: none; accent-color: #356f9f;
+    }
+    .reprocess-filter-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .reprocess-project-tools, .reprocess-source-tools { display: flex; flex-wrap: wrap; gap: 6px; margin: 1px 0 8px; }
+    .reprocess-project-tools button {
+      height: 26px; padding: 0 9px; border: 1px solid #b9c8d8; border-radius: 5px;
+      background: #ffffff; color: #456b93; font-size: 11px; font-weight: 600; cursor: pointer;
+    }
+    .reprocess-project-tools button:hover { color: var(--navy); background: #f2f6fa; border-color: #8fa8c2; }
+    .reprocess-project-tools button:focus-visible { outline: 2px solid #8ca6c4; outline-offset: 2px; }
+    .reprocess-project-search, .reprocess-source-search { width: 100%; margin-bottom: 8px; }
+    .reprocess-check-list { display: grid; gap: 4px; max-height: 150px; overflow: auto; }
+    .reprocess-check-list label { display: flex; align-items: center; gap: 7px; min-height: 24px; color: #505966; font-size: 12px; cursor: pointer; }
+    .reprocess-check-list label[hidden] { display: none; }
+    .reprocess-source-note { color: #687381; font-size: 11px; }
+    .reprocess-preview-button { height: 34px; align-self: end; padding: 0 13px; color: var(--navy); background: #ffffff; border: 1px solid #8ca6c4; border-radius: 7px; font-size: 12px; font-weight: 650; cursor: pointer; }
+    .reprocess-preview-button:disabled { cursor: wait; opacity: 0.55; }
+    .reprocess-result { margin-top: 14px; padding: 13px; color: #505966; background: #f6f8fb; border: 1px solid var(--line); border-radius: 7px; font-size: 12px; line-height: 1.6; }
+    .reprocess-result[hidden] { display: none; }
+    .reprocess-result strong { color: var(--navy); }
+    .reprocess-result.is-error { color: #8f3f30; background: #fff5f2; border-color: #e5bcb3; }
+    .reprocess-result.is-cloud { color: #704928; background: #fff8ec; border-color: #e6c28e; }
+    .reprocess-confirmation { margin-top: 12px; padding: 13px; background: #fffdf8; border: 1px solid #e4d5b9; border-radius: 7px; }
+    .reprocess-confirmation[hidden] { display: none; }
+    .reprocess-confirmation .settings-check + .settings-check { margin-top: 8px; }
+    .reprocess-execute { display: block; width: 100%; height: 36px; margin-top: 12px; color: #ffffff; background: #9a4f40; border: 1px solid #9a4f40; border-radius: 7px; font-size: 12px; font-weight: 700; cursor: pointer; }
+    .reprocess-execute:disabled { cursor: not-allowed; opacity: 0.5; }
+
+    .project {
+      margin: 0;
+      color: #565d69;
+      font-size: 12px;
+      font-weight: 600;
+      overflow-wrap: anywhere;
+    }
+
+    .category {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 8px 3px 6px;
+      color: #555966;
+      background: var(--gray-soft);
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .category::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: #8b8e98; }
+    .category-work { color: #4d5888; background: #ebedf7; }
+    .category-work::before { background: #737eae; }
+    .category-meeting { color: #3d716f; background: #e5f1ef; }
+    .category-meeting::before { background: #669894; }
+    .category-idea { color: #806438; background: #f5eedf; }
+    .category-idea::before { background: #b19868; }
+    .category-learning { color: #705a7f; background: #efe9f3; }
+    .category-learning::before { background: #947ca3; }
+    .category-life { color: #875a67; background: #f4e9ec; }
+    .category-life::before { background: #ad7c8a; }
+    .category-other { color: #616570; background: #f0f1f3; }
+    .category-other::before { background: #8b8e98; }
+
+    .entry-text {
+      margin: 0;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      overflow: hidden;
+      color: var(--text);
+      font-size: 16px;
+      font-weight: 430;
+      line-height: 1.55;
+      letter-spacing: 0;
+      transition: max-height 220ms ease;
+    }
+
+    .entry-text > :first-child { margin-top: 0; }
+    .entry-text > :last-child { margin-bottom: 0; }
+    .entry-text p { margin: 0 0 0.48em; }
+    .entry-text h1,
+    .entry-text h2 {
+      margin: 0.9em 0 0.38em;
+      color: #2f3d50;
+      line-height: 1.4;
+      letter-spacing: 0;
+    }
+    .entry-text h1 { font-size: 1.18em; font-weight: 680; }
+    .entry-text h2 { font-size: 1.06em; font-weight: 650; }
+    .entry-text ul,
+    .entry-text ol {
+      margin: 0.24em 0 0.42em;
+      padding-left: 1.85em;
+      list-style-position: outside;
+    }
+    .entry-text ul ul,
+    .entry-text ol ol,
+    .entry-text ul ol,
+    .entry-text ol ul { margin: 0.08em 0 0.2em; padding-left: 1.45em; }
+    .entry-text li { margin: 0; padding-left: 0.2em; }
+    .entry-text ul > li { line-height: 1.35; }
+    .entry-text li > p:first-child { margin: 0; }
+    .entry-text li > p:first-child + ul,
+    .entry-text li > p:first-child + ol { margin-top: 0.06em; }
+    .entry-text li::marker { color: #7187a5; font-variant-numeric: tabular-nums; }
+    .entry-text ol > li::marker { color: #526b88; font-weight: 600; }
+    .entry-text strong { color: #2e4058; font-weight: 680; }
+
+    .entry-table-scroll {
+      margin: 0.65em 0 0.8em;
+      overflow-x: auto;
+    }
+
+    .entry-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      border: 1px solid #d9e0e8;
+      border-radius: 8px;
+      overflow: hidden;
+      font-size: 12px;
+      line-height: 1.42;
+    }
+
+    .entry-table th,
+    .entry-table td {
+      padding: 8px 10px;
+      text-align: left;
+      vertical-align: top;
+      border-right: 1px solid #e3e7ec;
+      border-bottom: 1px solid #e3e7ec;
+    }
+    .entry-table th:last-child,
+    .entry-table td:last-child { border-right: 0; }
+    .entry-table tr:last-child td { border-bottom: 0; }
+    .entry-table th { color: #354b67; background: #edf2f8; font-weight: 650; }
+
+    .suspected-table-block {
+      margin: 0.65em 0 0.8em;
+      background: #f3f6f9;
+      border: 1px solid #d9e1e9;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .suspected-table-heading {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 7px 10px;
+      background: #e9eef4;
+      border-bottom: 1px solid #d9e1e9;
+    }
+    .suspected-table-badge { color: #405b79; font-size: 10px; font-weight: 650; }
+    .suspected-table-reason { color: #7b8490; font-size: 9px; text-align: right; }
+    .suspected-table-raw {
+      margin: 0;
+      padding: 13px 14px;
+      color: #3f4853;
+      background: #f8fafc;
+      white-space: pre;
+      overflow-x: auto;
+      overflow-y: hidden;
+      font: 11px/1.5 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      tab-size: 4;
+      -moz-tab-size: 4;
+    }
+
+    .entry-content {
+      grid-area: text;
+      min-width: 0;
+    }
+
+    .entry-text.is-collapsed {
+      -webkit-mask-image: linear-gradient(to bottom, #000 72%, transparent 100%);
+      mask-image: linear-gradient(to bottom, #000 72%, transparent 100%);
+    }
+
+    .entry-toggle {
+      display: inline-flex;
+      align-items: center;
+      margin-top: 10px;
+      padding: 3px 0;
+      color: var(--navy);
+      background: transparent;
+      border: 0;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: color 150ms ease, transform 150ms ease;
+    }
+
+    .entry-toggle:hover { color: var(--navy-hover); transform: translateY(-1px); }
+    .entry-toggle[hidden] { display: none; }
+
+    .entry-meta {
+      grid-area: meta;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 8px 14px;
+      align-items: start;
+      min-width: 0;
+      color: var(--subtle);
+    }
+
+    .meta-row { min-width: 0; }
+
+    .meta-row span {
+      display: block;
+      margin-bottom: 3px;
+      color: var(--subtle);
+      font-size: 10px;
+      font-weight: 600;
+    }
+
+    .meta-row time { color: var(--muted); font-size: 10px; white-space: nowrap; }
+
+    .status {
+      grid-column: 2;
+      grid-row: 1 / span 2;
+      justify-self: end;
+      padding: 3px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .status-todo { color: var(--orange); background: var(--orange-soft); }
+    .status-done { color: #66706b; background: #edf1ef; }
+    .status-none { color: #71747d; background: var(--gray-soft); }
+
+    .empty {
+      margin-top: 14px;
+      padding: 72px 24px;
+      text-align: center;
+      color: var(--muted);
+      background: var(--surface);
+      border: 1px solid var(--line-strong);
+      border-radius: 10px;
+      box-shadow: var(--shadow);
+    }
+
+    .empty strong {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--text);
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .prototype-note {
+      margin: 24px 2px 0;
+      color: var(--subtle);
+      font-size: 11px;
+      text-align: right;
+    }
+
+    @media (max-width: 820px) {
+      .toolbar { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .reset { width: 100%; }
+      .entry {
+        grid-template-columns: 1fr;
+        grid-template-areas: "text" "identity" "meta";
+        gap: 15px;
+      }
+      .entry > div:first-child { display: flex; align-items: center; gap: 10px; }
+      .entry-meta { grid-template-columns: repeat(2, minmax(0, 1fr)) auto; }
+      .status { grid-column: 3; grid-row: 1; }
+      .progress-steps { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 560px) {
+      .shell { width: calc(100% - 28px); padding: 36px 0 64px; }
+      .masthead { align-items: flex-start; flex-direction: column; gap: 18px; }
+      .masthead-tools { width: 100%; justify-items: start; }
+      .page-actions { width: 100%; flex-wrap: wrap; }
+      .settings-form { padding: 20px 17px; }
+      .settings-segments,
+      .settings-grid { grid-template-columns: 1fr; }
+      .settings-actions { align-items: stretch; flex-direction: column; }
+      .settings-actions button { width: 100%; }
+      .progress-heading { align-items: flex-start; }
+      .progress-steps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      h1 { font-size: 28px; }
+      .summary { padding: 0; }
+      .project-tabs-row { margin-top: 34px; padding: 7px; }
+      .toolbar { grid-template-columns: 1fr; margin-top: 9px; padding: 12px; }
+      .project-tabs-bar { gap: 5px; }
+      .project-tab { padding: 0 9px; }
+      .more-projects summary { padding: 0 9px; }
+      .list-heading { align-items: flex-start; flex-direction: column; gap: 5px; margin-top: 34px; }
+      .entry { padding: 21px 18px 19px; }
+      .entry > div:first-child { flex-wrap: wrap; }
+      .entry-text { font-size: 16px; line-height: 1.55; }
+      .entry-table th,
+      .entry-table td { min-width: 125px; padding: 7px 9px; }
+      .suspected-table-heading { align-items: flex-start; flex-direction: column; gap: 3px; }
+      .suspected-table-reason { text-align: left; }
+      .suspected-table-raw { min-width: max-content; }
+      .entry-meta { grid-template-columns: 1fr; gap: 10px; }
+      .status { grid-column: 1; grid-row: 3; justify-self: start; }
+      .prototype-note { text-align: left; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="masthead">
+      <div>
+        <p class="eyebrow">Personal Notes / Review</p>
+        <h1>笔记回顾</h1>
+      </div>
+      <div class="masthead-tools">
+        <div class="page-actions" aria-label="笔记操作">
+          <button class="page-action" id="organize-button" type="button" disabled>整理</button>
+          <button class="page-action" id="model-settings-button" type="button" disabled>模型设置</button>
+          <button class="page-action" id="diagnostics-button" type="button" disabled>诊断</button>
+          <button class="page-action" id="hidden-toggle" type="button" disabled>已隐藏 (0)</button>
+        </div>
+        <p class="service-status" id="service-status" aria-live="polite"></p>
+        <div class="summary" aria-live="polite">
+          <strong id="visible-count">0</strong>
+          <span>条记录正在显示</span>
+        </div>
+      </div>
+    </header>
+
+    <aside class="purge-reminder" id="purge-reminder" role="alert" hidden>
+      <button id="purge-reminder-close" type="button">关闭提醒</button>
+      <strong>工具内部数据已彻底删除</strong>
+      <span id="purge-reminder-text">请立即从原始 TXT 中手动删除这条内容；否则下次点击整理时，它会重新出现。</span>
+    </aside>
+
+    <section class="organize-progress" id="organize-progress" aria-live="polite" hidden>
+      <div class="progress-heading">
+        <div class="progress-title">
+          <span class="progress-spinner" aria-hidden="true"></span>
+          <strong id="progress-label">准备整理</strong>
+        </div>
+        <div class="progress-metrics">
+          <span class="progress-elapsed" id="progress-elapsed">0:00</span>
+          <span class="progress-percent" id="progress-percent">0%</span>
+        </div>
+      </div>
+      <div class="progress-track" role="progressbar" aria-label="整理进度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+        <div class="progress-fill" id="progress-fill"></div>
+      </div>
+      <p class="progress-message" id="progress-message"></p>
+      <ol class="progress-steps" aria-label="整理步骤">
+        <li class="progress-step" data-progress-stage="reading">读取笔记</li>
+        <li class="progress-step" data-progress-stage="detecting">检测变化</li>
+        <li class="progress-step" data-progress-stage="classifying">AI 分类</li>
+        <li class="progress-step" data-progress-stage="formatting">生成排版</li>
+        <li class="progress-step" data-progress-stage="tables">识别表格</li>
+        <li class="progress-step" data-progress-stage="rebuilding">重建页面</li>
+      </ol>
+      <div class="progress-actions">
+        <button class="progress-cancel" id="progress-cancel" type="button" hidden>取消整理</button>
+        <button class="progress-dismiss" id="progress-dismiss" type="button" hidden>关闭提示</button>
+      </div>
+    </section>
+
+    <dialog class="diagnostics-dialog" id="diagnostics-dialog" aria-labelledby="diagnostics-title">
+      <div class="diagnostics-content">
+        <div class="diagnostics-heading">
+          <h2 id="diagnostics-title">最近整理诊断</h2>
+          <button id="diagnostics-close" type="button">关闭</button>
+        </div>
+        <div class="diagnostics-list" id="diagnostics-list"></div>
+        <p class="diagnostics-empty" id="diagnostics-empty" hidden>还没有整理任务记录。</p>
+        <div class="diagnostics-actions">
+          <button id="diagnostics-copy" type="button" disabled>复制最新摘要</button>
+        </div>
+      </div>
+    </dialog>
+
+    <nav class="project-tabs-row" aria-label="项目导航">
+      <span class="project-tabs-label">项目</span>
+      <div class="project-tabs-bar">
+        <div class="project-tabs" id="project-tabs" role="tablist" aria-label="项目"></div>
+        <details class="more-projects" id="more-projects">
+          <summary>更多 ▾</summary>
+          <div class="more-menu" id="more-menu"></div>
+        </details>
+      </div>
+      <input id="project-filter" type="hidden" value="all">
+    </nav>
+
+    <section class="toolbar" aria-label="笔记筛选器">
+      <div class="field">
+        <label for="category-filter">分类</label>
+        <select id="category-filter"></select>
+      </div>
+      <div class="field">
+        <label for="status-filter">状态</label>
+        <select id="status-filter"></select>
+      </div>
+      <div class="field">
+        <label for="sort-order">排序</label>
+        <select id="sort-order">
+          <option value="record-desc">记录时间：新到旧</option>
+          <option value="record-asc">记录时间：旧到新</option>
+          <option value="event-desc">事件时间：近到远</option>
+        </select>
+      </div>
+      <button class="reset" id="reset" type="button" title="清除全部筛选">清除筛选</button>
+    </section>
+
+    <div class="list-heading">
+      <h2 id="section-title">全部笔记</h2>
+      <p id="filter-description">跨项目查看所有已整理记录</p>
+    </div>
+
+    <section id="entries" class="entries" aria-live="polite"></section>
+    <div id="empty" class="empty" hidden>
+      <strong>没有符合条件的笔记</strong>
+      <span>调整上方筛选条件后再看看。</span>
+    </div>
+    <p class="prototype-note">/* BUILD:FOOTER:START */交互原型 · 当前内容均为虚构数据，不会修改正式 JSON/* BUILD:FOOTER:END */</p>
+  </main>
+
+  <dialog class="purge-dialog" id="purge-dialog" aria-labelledby="purge-dialog-title">
+    <form class="purge-dialog-content" method="dialog">
+      <h2 id="purge-dialog-title">永久删除这条记录？</h2>
+      <p><strong>此操作将永久删除该记录，不可恢复。</strong></p>
+      <p class="purge-warning">⚠️ 你的原始 TXT 文件里这条内容仍然存在。为保证数据安全，本工具不会自动修改你的原始文件。请你立即手动去原 TXT 里删除这条内容；否则下次点击整理时，它会重新出现。</p>
+      <p class="purge-source" id="purge-source"></p>
+      <div class="purge-dialog-actions">
+        <button class="purge-cancel" id="purge-cancel" type="submit" value="cancel">取消</button>
+        <button class="purge-confirm" id="purge-confirm" type="button">确认删除</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog class="settings-dialog" id="model-settings-dialog" aria-labelledby="model-settings-title">
+    <form class="settings-form" id="model-settings-form" method="dialog">
+      <div class="settings-heading">
+        <h2 id="model-settings-title">模型设置</h2>
+        <button class="settings-close" id="model-settings-close" type="button">关闭</button>
+      </div>
+      <fieldset class="settings-group">
+        <legend>运行方式</legend>
+        <div class="settings-segments">
+          <label class="settings-segment">
+            <input type="radio" name="model-provider" value="ollama" checked>
+            <span>本地 Ollama <small>推荐 · 隐私优先</small></span>
+          </label>
+          <label class="settings-segment">
+            <input type="radio" name="model-provider" value="cloud">
+            <span>云端 API</span>
+          </label>
+        </div>
+      </fieldset>
+      <section class="settings-panel" id="ollama-settings-panel">
+        <p class="secret-status">笔记仅发送给本机 Ollama，不产生云端 API 费用。</p>
+        <p class="settings-hint">当前本地模型：<strong id="ollama-model-status">读取中…</strong></p>
+      </section>
+      <section class="settings-panel" id="cloud-settings-panel" hidden>
+        <p class="settings-intro">通常只需填写标有“必填”的项目，其余项目不确定时保持默认或留空即可。</p>
+        <div class="settings-grid">
+          <div class="settings-field is-wide">
+            <label class="settings-label" for="openai-base-url">Base URL<span class="required-mark">必填</span></label>
+            <input id="openai-base-url" type="url" autocomplete="off" placeholder="https://api.openai.com/v1">
+            <p class="settings-hint">示例：https://api.openai.com/v1。填写服务商给你的 API 根地址，不要加 /chat/completions。</p>
+          </div>
+          <div class="settings-field">
+            <label class="settings-label" for="openai-model">Model<span class="required-mark">必填</span></label>
+            <input id="openai-model" type="text" autocomplete="off" placeholder="gpt-4.1-mini">
+            <p class="settings-hint">示例：gpt-4.1-mini。以服务商控制台列出的模型名称为准。</p>
+          </div>
+          <div class="settings-field">
+            <label class="settings-label" for="openai-timeout">Timeout (seconds)</label>
+            <input id="openai-timeout" type="number" min="1" step="1" placeholder="120">
+            <p class="settings-hint">示例：120。一般保持默认即可；网络较慢时可适当增大。</p>
+          </div>
+          <div class="settings-field is-wide">
+            <label class="settings-label" for="openai-ca-bundle">CA Certificate File</label>
+            <input id="openai-ca-bundle" type="text" autocomplete="off" placeholder="通常留空">
+            <p class="settings-hint">仅在 Python 提示 TLS 证书不受信任时填写 PEM 证书文件的绝对路径。</p>
+          </div>
+        </div>
+        <div class="settings-field is-wide">
+          <label class="settings-label" for="cloud-api-key">API Key<span class="required-mark" id="api-key-required">首次配置必填</span></label>
+          <input id="cloud-api-key" type="password" autocomplete="new-password" placeholder="例如 sk-...；请勿在聊天或截图中分享">
+          <p class="settings-hint">示例格式：sk-...。这里只在本机保存；已有 Key 时留空表示继续使用原 Key。</p>
+          <p class="secret-status" id="api-key-status">尚未保存 API Key</p>
+        </div>
+        <label class="settings-check"><input id="clear-api-key" type="checkbox">清除本机已保存的 API Key</label>
+        <p class="cloud-warning"><strong>隐私与费用提醒：</strong>使用云端 API 时，笔记内容会发送到你配置的服务商，并可能产生费用。切换模型不会自动上传或重新处理历史笔记。</p>
+        <label class="settings-check"><input id="cloud-privacy-acknowledged" type="checkbox">我确认笔记内容会发送到该云端服务，并了解可能产生费用。<span class="required-mark">必填</span></label>
+      </section>
+      <div class="settings-actions">
+        <p class="settings-result" id="model-settings-result" aria-live="polite"></p>
+        <button class="settings-test" id="model-settings-test" type="button">测试连接</button>
+        <button class="settings-save" id="model-settings-save" type="button">保存</button>
+      </div>
+      <section class="reprocess-plan" id="reprocess-plan-section" hidden>
+        <h3>重新整理已有笔记</h3>
+        <p class="settings-intro">先计算范围和预计成本，不会调用模型或修改记录。</p>
+        <p class="settings-hint">本次目标模型：<strong id="reprocess-target-model">读取中…</strong></p>
+        <div class="reprocess-options">
+          <div class="settings-field is-wide">
+            <span class="settings-label">处理方式</span>
+            <div class="reprocess-mode">
+              <label><input type="radio" name="reprocess-mode" value="full" checked>完整重新整理</label>
+              <label><input type="radio" name="reprocess-mode" value="repair">仅修复降级结果</label>
+            </div>
+            <p class="settings-hint" id="reprocess-mode-hint">使用当前模型重新分析、排版，并仅在存在表格候选时识别表格。</p>
+          </div>
+          <div class="settings-field is-wide">
+            <span class="settings-label">项目</span>
+            <div class="reprocess-project-tools">
+              <button id="reprocess-project-all" type="button">全选</button>
+              <button id="reprocess-project-none" type="button">清空</button>
+              <button id="reprocess-project-invert" type="button">反选当前列表</button>
+            </div>
+            <input class="reprocess-project-search" id="reprocess-project-search" type="search" placeholder="搜索项目" hidden>
+            <div class="reprocess-check-list" id="reprocess-project-list"></div>
+          </div>
+          <div class="reprocess-filter-grid">
+            <div class="settings-field"><label class="settings-label" for="reprocess-date-from">记录开始日期</label><input id="reprocess-date-from" type="date"></div>
+            <div class="settings-field"><label class="settings-label" for="reprocess-date-to">记录结束日期</label><input id="reprocess-date-to" type="date"></div>
+          </div>
+          <div class="settings-field is-wide">
+            <span class="settings-label">记录可见性</span>
+            <div class="reprocess-visibility">
+              <label><input type="radio" name="reprocess-visibility" value="visible" checked>仅可见</label>
+              <label><input type="radio" name="reprocess-visibility" value="all">可见和隐藏</label>
+              <label><input type="radio" name="reprocess-visibility" value="hidden">仅隐藏</label>
+            </div>
+          </div>
+          <div class="settings-field is-wide" id="reprocess-source-section">
+            <span class="settings-label">原整理来源（不是目标模型）</span>
+            <input class="reprocess-source-search" id="reprocess-source-search" type="search" placeholder="搜索模型来源" hidden>
+            <div class="reprocess-check-list" id="reprocess-source-list"></div>
+            <label class="settings-check"><input id="reprocess-allow-current" type="checkbox">允许重新整理当前模型结果</label>
+            <p class="reprocess-source-note">当前模型结果默认显示但不可选；缺少来源的历史记录可单独选择。</p>
+          </div>
+          <button class="reprocess-preview-button" id="reprocess-preview" type="button">计算预计范围和成本</button>
+        </div>
+        <div class="reprocess-result" id="reprocess-result" aria-live="polite" hidden></div>
+        <div class="reprocess-confirmation" id="reprocess-confirmation" hidden>
+          <label class="settings-check"><input id="reprocess-confirmed" type="checkbox">我已核对上方范围，确认执行这一次重处理。</label>
+          <label class="settings-check" id="reprocess-cloud-confirm-row" hidden><input id="reprocess-cloud-confirmed" type="checkbox">我确认所选历史正文将发送到当前云端服务，并可能产生费用。</label>
+          <button class="reprocess-execute" id="reprocess-execute" type="button" disabled>确认并开始重新处理</button>
+        </div>
+      </section>
+    </form>
+  </dialog>
+
+  <script>
+    /* BUILD:MARKDOWN_IT:START */
+    /* markdown-it will be embedded by build_html.py */
+    /* BUILD:MARKDOWN_IT:END */
+  </script>
+  <script>
+    /* BUILD:CATEGORIES:START */
+    const categories = [
+      { code: "work", labels: { "zh-CN": "工作", en: "Work" } },
+      { code: "meeting", labels: { "zh-CN": "会议", en: "Meeting" } },
+      { code: "idea", labels: { "zh-CN": "想法", en: "Idea" } },
+      { code: "learning", labels: { "zh-CN": "学习", en: "Learning" } },
+      { code: "life", labels: { "zh-CN": "生活", en: "Life" } },
+      { code: "other", labels: { "zh-CN": "其他", en: "Other" } }
+    ];
+    /* BUILD:CATEGORIES:END */
+
+    /* BUILD:ENTRIES:START */
+    const entries = [
+      {
+        id: "mock-1",
+        text: "周五前完成季度项目总结，重点补充用户反馈与下一步风险。",
+        record_time: "2026-08-20T16:42:00+08:00",
+        event_time: "2026-08-21T17:00:00+08:00",
+        project: "工作规划",
+        category: "work",
+        status: "todo"
+      },
+      {
+        id: "mock-2",
+        text: "和产品团队讨论了搜索入口。\n\n结论：先保留项目筛选，再观察是否需要全文搜索。",
+        record_time: "2026-08-20T11:18:00+08:00",
+        event_time: "2026-08-20T10:30:00+08:00",
+        project: "笔记工具",
+        category: "meeting",
+        status: "done"
+      },
+      {
+        id: "mock-3",
+        text: "想法：把每天新增的记录做成一条安静的时间线，而不是堆叠成很多卡片。",
+        record_time: "2026-08-19T22:06:00+08:00",
+        event_time: null,
+        project: "笔记工具",
+        category: "idea",
+        status: "none"
+      },
+      {
+        id: "mock-4",
+        text: "阅读 Python pathlib 文档，整理 Path、resolve、relative_to 的区别。",
+        record_time: "2026-08-19T19:20:00+08:00",
+        event_time: "2026-08-23T09:00:00+08:00",
+        project: "Python 学习",
+        category: "learning",
+        status: "todo"
+      },
+      {
+        id: "mock-5",
+        text: "预约下周二的牙医检查，记得带上之前的检查报告。",
+        record_time: "2026-08-18T08:35:00+08:00",
+        event_time: "2026-08-25T14:30:00+08:00",
+        project: "个人生活",
+        category: "life",
+        status: "todo"
+      },
+      {
+        id: "mock-6",
+        text: "已归档旧项目资料，保留最终版本和会议纪要。",
+        record_time: "2026-08-17T15:10:00+08:00",
+        event_time: "2026-08-17T15:00:00+08:00",
+        project: "工作规划",
+        category: "other",
+        status: "done"
+      }
+    ];
+    /* BUILD:ENTRIES:END */
+
+    /* BUILD:LANGUAGE:START */
+    const language = "zh-CN";
+    /* BUILD:LANGUAGE:END */
+    /* BUILD:COLLAPSED_LINES:START */
+    const collapsedLines = 4;
+    /* BUILD:COLLAPSED_LINES:END */
+    let markdownRenderer = null;
+    try {
+      if (typeof window.markdownit === "function") {
+        markdownRenderer = window.markdownit({
+          html: false,
+          linkify: false,
+          typographer: false,
+          breaks: true
+        });
+        markdownRenderer.disable([
+          "code", "fence", "blockquote", "hr", "reference", "html_block", "lheading",
+          "backticks", "strikethrough", "link", "image", "autolink", "html_inline", "entity"
+        ]);
+      }
+    } catch (error) {
+      console.warn("Markdown 渲染器初始化失败，将统一显示原文。", error);
+      markdownRenderer = null;
+    }
+    const statusLabels = { todo: "待办", done: "已完成", none: "无状态" };
+    const legacyProjectLayoutStorageKey = "my-notes-tool.project-tabs.v1";
+    const projectLayoutStorageKey = "my-notes-tool.project-tabs.v2";
+    localStorage.removeItem(legacyProjectLayoutStorageKey);
+    const defaultProjects = [...new Set(entries.map((entry) => entry.project))].sort();
+    const projects = [...defaultProjects];
+    const closedProjects = new Set();
+    let draggedProject = null;
+    let suppressProjectClick = false;
+    let dragPlaceholder = null;
+    let currentDropPosition = null;
+    let currentDropTarget = null;
+    let dropCompleted = false;
+    const projectFilter = document.querySelector("#project-filter");
+    const projectTabs = document.querySelector("#project-tabs");
+    const moreProjects = document.querySelector("#more-projects");
+    const moreMenu = document.querySelector("#more-menu");
+    const categoryFilter = document.querySelector("#category-filter");
+    const statusFilter = document.querySelector("#status-filter");
+    const sortOrder = document.querySelector("#sort-order");
+    const entriesElement = document.querySelector("#entries");
+    const emptyElement = document.querySelector("#empty");
+    const visibleCount = document.querySelector("#visible-count");
+    const sectionTitle = document.querySelector("#section-title");
+    const filterDescription = document.querySelector("#filter-description");
+    const organizeButton = document.querySelector("#organize-button");
+    const modelSettingsButton = document.querySelector("#model-settings-button");
+    const diagnosticsButton = document.querySelector("#diagnostics-button");
+    const hiddenToggle = document.querySelector("#hidden-toggle");
+    const serviceStatus = document.querySelector("#service-status");
+    const purgeDialog = document.querySelector("#purge-dialog");
+    const purgeCancel = document.querySelector("#purge-cancel");
+    const purgeConfirm = document.querySelector("#purge-confirm");
+    const purgeSource = document.querySelector("#purge-source");
+    const purgeReminder = document.querySelector("#purge-reminder");
+    const purgeReminderText = document.querySelector("#purge-reminder-text");
+    const purgeReminderClose = document.querySelector("#purge-reminder-close");
+    const organizeProgress = document.querySelector("#organize-progress");
+    const progressLabel = document.querySelector("#progress-label");
+    const progressPercent = document.querySelector("#progress-percent");
+    const progressElapsed = document.querySelector("#progress-elapsed");
+    const progressFill = document.querySelector("#progress-fill");
+    const progressTrack = organizeProgress.querySelector(".progress-track");
+    const progressMessage = document.querySelector("#progress-message");
+    const progressDismiss = document.querySelector("#progress-dismiss");
+    const progressCancel = document.querySelector("#progress-cancel");
+    const progressSteps = [...document.querySelectorAll("[data-progress-stage]")];
+    const modelSettingsDialog = document.querySelector("#model-settings-dialog");
+    const diagnosticsDialog = document.querySelector("#diagnostics-dialog");
+    const diagnosticsClose = document.querySelector("#diagnostics-close");
+    const diagnosticsList = document.querySelector("#diagnostics-list");
+    const diagnosticsEmpty = document.querySelector("#diagnostics-empty");
+    const diagnosticsCopy = document.querySelector("#diagnostics-copy");
+    const modelSettingsForm = document.querySelector("#model-settings-form");
+    const modelSettingsClose = document.querySelector("#model-settings-close");
+    const modelSettingsResult = document.querySelector("#model-settings-result");
+    const modelSettingsTest = document.querySelector("#model-settings-test");
+    const modelSettingsSave = document.querySelector("#model-settings-save");
+    const cloudSettingsPanel = document.querySelector("#cloud-settings-panel");
+    const ollamaSettingsPanel = document.querySelector("#ollama-settings-panel");
+    const ollamaModelStatus = document.querySelector("#ollama-model-status");
+    const cloudApiKey = document.querySelector("#cloud-api-key");
+    const apiKeyStatus = document.querySelector("#api-key-status");
+    const clearApiKey = document.querySelector("#clear-api-key");
+    const cloudPrivacyAcknowledged = document.querySelector("#cloud-privacy-acknowledged");
+    const apiKeyRequired = document.querySelector("#api-key-required");
+    const reprocessPlanSection = document.querySelector("#reprocess-plan-section");
+    const reprocessProjectList = document.querySelector("#reprocess-project-list");
+    const reprocessProjectSearch = document.querySelector("#reprocess-project-search");
+    const reprocessDateFrom = document.querySelector("#reprocess-date-from");
+    const reprocessDateTo = document.querySelector("#reprocess-date-to");
+    const reprocessSourceSection = document.querySelector("#reprocess-source-section");
+    const reprocessSourceList = document.querySelector("#reprocess-source-list");
+    const reprocessSourceSearch = document.querySelector("#reprocess-source-search");
+    const reprocessAllowCurrent = document.querySelector("#reprocess-allow-current");
+    const reprocessModeHint = document.querySelector("#reprocess-mode-hint");
+    const reprocessTargetModel = document.querySelector("#reprocess-target-model");
+    const reprocessPreview = document.querySelector("#reprocess-preview");
+    const reprocessResult = document.querySelector("#reprocess-result");
+    const reprocessConfirmation = document.querySelector("#reprocess-confirmation");
+    const reprocessConfirmed = document.querySelector("#reprocess-confirmed");
+    const reprocessCloudConfirmRow = document.querySelector("#reprocess-cloud-confirm-row");
+    const reprocessCloudConfirmed = document.querySelector("#reprocess-cloud-confirmed");
+    const reprocessExecute = document.querySelector("#reprocess-execute");
+    const progressStageOrder = ["reading", "detecting", "classifying", "formatting", "tables", "rebuilding"];
+    let activeOrganizeJob = null;
+    let elapsedTimer = null;
+    const interactiveMode = window.location.protocol === "http:"
+      && ["127.0.0.1", "localhost"].includes(window.location.hostname);
+    let apiToken = null;
+    let purgeEnabled = false;
+    let modelSettingsEnabled = false;
+    let diagnosticsEnabled = false;
+    let diagnosticReports = [];
+    let reprocessPlanEnabled = false;
+    let reprocessExecuteEnabled = false;
+    let currentReprocessPlan = null;
+    let currentReprocessRequest = null;
+    let reprocessOptionsState = null;
+    let reprocessPreviewVersion = 0;
+    let modelSettingsDirty = false;
+    let hiddenView = false;
+    let pendingPurgeEntry = null;
+    let modelSettingsState = null;
+    const modelSettingsDefaults = {
+      standard_openai: { base_url: "", model: "", timeout_seconds: 120, ca_bundle_path: "" }
+    };
+
+    function categoryLabel(code) {
+      const category = categories.find((item) => item.code === code);
+      if (!category) return code;
+      return category.labels[language] || category.labels.en || Object.values(category.labels)[0] || code;
+    }
+
+    function addOption(select, value, label) {
+      const option = document.createElement("option");
+      option.value = value;
+      option.textContent = label;
+      select.append(option);
+    }
+
+    function selectProject(project) {
+      projectFilter.value = project;
+      updateFilterAvailability();
+      renderProjectTabs();
+      render();
+    }
+
+    function loadProjectLayout() {
+      try {
+        const savedText = localStorage.getItem(projectLayoutStorageKey);
+        if (!savedText) return;
+        const saved = JSON.parse(savedText);
+        const savedOrder = Array.isArray(saved.order) ? saved.order : [];
+        const savedClosed = Array.isArray(saved.closed) ? saved.closed : [];
+        const currentProjects = new Set(defaultProjects);
+        const knownProjects = new Set([...savedOrder, ...savedClosed]);
+        const restoredOrder = savedOrder.filter((project) => currentProjects.has(project));
+        const newProjects = defaultProjects.filter((project) => !knownProjects.has(project));
+        projects.splice(0, projects.length, ...restoredOrder, ...newProjects);
+        defaultProjects.forEach((project) => {
+          if (!projects.includes(project)) projects.push(project);
+        });
+        savedClosed
+          .filter((project) => currentProjects.has(project))
+          .forEach((project) => closedProjects.add(project));
+      } catch (error) {
+        console.warn("无法读取项目 tab 布局，将使用默认顺序。", error);
+      }
+    }
+
+    function saveProjectLayout() {
+      try {
+        localStorage.setItem(projectLayoutStorageKey, JSON.stringify({
+          order: projects,
+          closed: [...closedProjects],
+        }));
+      } catch (error) {
+        console.warn("无法保存项目 tab 布局。", error);
+      }
+    }
+
+    function resetProjectLayout() {
+      try {
+        localStorage.removeItem(projectLayoutStorageKey);
+      } catch (error) {
+        console.warn("无法清除项目 tab 布局。", error);
+      }
+      projects.splice(0, projects.length, ...defaultProjects);
+      closedProjects.clear();
+      projectFilter.value = "all";
+      moreProjects.open = false;
+      updateFilterAvailability();
+      renderProjectTabs();
+      render();
+    }
+
+    function clearDropIndicators() {
+      currentDropPosition = null;
+      currentDropTarget = null;
+      if (dragPlaceholder) {
+        dragPlaceholder.remove();
+        dragPlaceholder = null;
+      }
+    }
+
+    function clearDragStyles() {
+      clearDropIndicators();
+      projectTabs.classList.remove("is-dragging");
+      projectTabs.querySelectorAll(".project-tab").forEach((tab) => {
+        tab.classList.remove("dragging");
+      });
+    }
+
+    function showDropPlaceholder(tab, project, placeAfter) {
+      const positionKey = `${project}:${placeAfter ? "after" : "before"}`;
+      if (currentDropPosition === positionKey && dragPlaceholder?.isConnected) return;
+      clearDropIndicators();
+      currentDropPosition = positionKey;
+      currentDropTarget = { project, placeAfter };
+      dragPlaceholder = document.createElement("div");
+      dragPlaceholder.className = "drag-placeholder";
+      dragPlaceholder.setAttribute("aria-hidden", "true");
+      if (placeAfter) tab.after(dragPlaceholder);
+      else tab.before(dragPlaceholder);
+      const sourceTab = projectTabs.querySelector(`[data-project="${CSS.escape(draggedProject)}"]`);
+      const placeholderWidth = sourceTab?.offsetWidth || 96;
+      requestAnimationFrame(() => {
+        if (!dragPlaceholder) return;
+        dragPlaceholder.classList.add("visible");
+        dragPlaceholder.style.width = `${placeholderWidth}px`;
+      });
+    }
+
+    function confirmDroppedProject(project) {
+      requestAnimationFrame(() => {
+        const droppedTab = projectTabs.querySelector(`[data-project="${CSS.escape(project)}"]`);
+        if (!droppedTab || droppedTab.hidden) return;
+        droppedTab.classList.add("drop-confirm");
+        droppedTab.addEventListener("animationend", () => {
+          droppedTab.classList.remove("drop-confirm");
+        }, { once: true });
+      });
+    }
+
+    function calculateProjectOrder(dragged, target, placeAfter) {
+      const previewOrder = projects.filter((project) => project !== dragged);
+      if (target === "all") {
+        previewOrder.unshift(dragged);
+      } else {
+        const targetIndex = previewOrder.indexOf(target);
+        const insertIndex = targetIndex === -1
+          ? previewOrder.length
+          : targetIndex + (placeAfter ? 1 : 0);
+        previewOrder.splice(insertIndex, 0, dragged);
+      }
+      return previewOrder;
+    }
+
+    function wouldChangeProjectOrder(dragged, target, placeAfter) {
+      const previewOrder = calculateProjectOrder(dragged, target, placeAfter);
+      return previewOrder.some((project, index) => project !== projects[index]);
+    }
+
+    function moveProject(dragged, target, placeAfter) {
+      if (!dragged || dragged === target) return;
+      const oldIndex = projects.indexOf(dragged);
+      if (oldIndex === -1) return;
+      projects.splice(oldIndex, 1);
+      if (target === "all") {
+        projects.unshift(dragged);
+      } else {
+        const targetIndex = projects.indexOf(target);
+        const insertIndex = targetIndex === -1
+          ? projects.length
+          : targetIndex + (placeAfter ? 1 : 0);
+        projects.splice(insertIndex, 0, dragged);
+      }
+      console.log("[项目 Tab 拖动] 更新后的顺序数组", [...projects]);
+      saveProjectLayout();
+      renderProjectTabs();
+      confirmDroppedProject(dragged);
+    }
+
+    function commitProjectDrop() {
+      if (!draggedProject || !currentDropTarget) return;
+      const projectToMove = draggedProject;
+      const previewedTarget = { ...currentDropTarget };
+      const oldOrder = [...projects];
+      const expectedOrder = calculateProjectOrder(
+        projectToMove,
+        previewedTarget.project,
+        previewedTarget.placeAfter,
+      );
+      console.groupCollapsed(`[项目 Tab 拖动] 松手：${projectToMove}`);
+      console.log("旧顺序", oldOrder);
+      console.log("最后预览目标", previewedTarget);
+      console.log("计算出的新顺序", expectedOrder);
+      dropCompleted = true;
+      draggedProject = null;
+      clearDragStyles();
+      moveProject(projectToMove, previewedTarget.project, previewedTarget.placeAfter);
+      console.groupEnd();
+    }
+
+    function addDropTargetBehavior(tab, project) {
+      tab.addEventListener("dragover", (event) => {
+        if (!draggedProject) return;
+        if (draggedProject === project) {
+          clearDropIndicators();
+          event.dataTransfer.dropEffect = "none";
+          return;
+        }
+        event.preventDefault();
+        const rectangle = tab.getBoundingClientRect();
+        const placeAfter = project !== "all" && event.clientX > rectangle.left + rectangle.width / 2;
+        if (!wouldChangeProjectOrder(draggedProject, project, placeAfter)) {
+          clearDropIndicators();
+          event.dataTransfer.dropEffect = "none";
+          return;
+        }
+        showDropPlaceholder(tab, project, placeAfter);
+        event.dataTransfer.dropEffect = "move";
+      });
+      tab.addEventListener("drop", (event) => {
+        if (!draggedProject || !currentDropTarget || draggedProject === project) return;
+        event.preventDefault();
+        commitProjectDrop();
+      });
+    }
+
+    projectTabs.addEventListener("dragover", (event) => {
+      if (!draggedProject || !currentDropTarget) return;
+      event.preventDefault();
+      event.dataTransfer.dropEffect = "move";
+    });
+
+    projectTabs.addEventListener("drop", (event) => {
+      if (!draggedProject || !currentDropTarget) return;
+      event.preventDefault();
+      commitProjectDrop();
+    });
+
+    function createProjectTab(project, label, closeable = true) {
+      const tab = document.createElement("div");
+      tab.className = "project-tab";
+      tab.role = "tab";
+      tab.tabIndex = 0;
+      tab.dataset.project = project;
+      tab.setAttribute("aria-selected", String(projectFilter.value === project));
+      tab.draggable = closeable;
+      const name = document.createElement("span");
+      name.textContent = label;
+      tab.append(name);
+      tab.addEventListener("click", () => {
+        if (!suppressProjectClick) selectProject(project);
+      });
+      tab.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          selectProject(project);
+        }
+      });
+      addDropTargetBehavior(tab, project);
+
+      if (closeable) {
+        tab.addEventListener("dragstart", (event) => {
+          draggedProject = project;
+          dropCompleted = false;
+          suppressProjectClick = true;
+          projectTabs.classList.add("is-dragging");
+          tab.classList.add("dragging");
+          event.dataTransfer.effectAllowed = "move";
+          event.dataTransfer.setData("text/plain", project);
+        });
+        tab.addEventListener("dragend", () => {
+          console.log("[项目 Tab 拖动] dragend", {
+            project,
+            dropCompleted,
+            finalOrder: [...projects],
+          });
+          draggedProject = null;
+          clearDragStyles();
+          window.setTimeout(() => { suppressProjectClick = false; }, 0);
+        });
+        const close = document.createElement("button");
+        close.className = "tab-close";
+        close.type = "button";
+        close.title = `收起 ${label}`;
+        close.ariaLabel = `收起 ${label}`;
+        close.textContent = "×";
+        close.draggable = false;
+        close.addEventListener("click", (event) => {
+          event.stopPropagation();
+          closedProjects.add(project);
+          saveProjectLayout();
+          if (projectFilter.value === project) projectFilter.value = "all";
+          renderProjectTabs();
+          render();
+        });
+        tab.append(close);
+      }
+      return tab;
+    }
+
+    function updateMoreMenu(overflowProjects) {
+      const menuProjects = projects.filter((project) => {
+        return closedProjects.has(project) || overflowProjects.includes(project);
+      });
+      moreMenu.replaceChildren();
+      if (menuProjects.length === 0) {
+        const empty = document.createElement("div");
+        empty.className = "more-empty";
+        empty.textContent = "没有收起的项目";
+        moreMenu.append(empty);
+      }
+      menuProjects.forEach((project) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.textContent = closedProjects.has(project) ? `恢复：${project}` : project;
+        button.addEventListener("click", () => {
+          closedProjects.delete(project);
+          saveProjectLayout();
+          projectFilter.value = project;
+          moreProjects.open = false;
+          renderProjectTabs();
+          render();
+        });
+        moreMenu.append(button);
+      });
+      const resetButton = document.createElement("button");
+      resetButton.className = "reset-layout";
+      resetButton.type = "button";
+      resetButton.textContent = "恢复默认布局";
+      resetButton.addEventListener("click", resetProjectLayout);
+      moreMenu.append(resetButton);
+    }
+
+    function fitProjectTabs() {
+      const tabs = [...projectTabs.querySelectorAll(".project-tab")];
+      tabs.forEach((tab) => { tab.hidden = false; });
+      const availableWidth = projectTabs.clientWidth;
+      let usedWidth = 0;
+      const visibleTabs = [];
+      tabs.forEach((tab, index) => {
+        usedWidth += tab.offsetWidth + (index === 0 ? 0 : 3);
+        visibleTabs.push(tab);
+      });
+      while (usedWidth > availableWidth && visibleTabs.length > 1) {
+        let removableIndex = visibleTabs.length - 1;
+        while (
+          removableIndex > 0
+          && visibleTabs[removableIndex].dataset.project === projectFilter.value
+        ) {
+          removableIndex -= 1;
+        }
+        if (removableIndex === 0) break;
+        const [removed] = visibleTabs.splice(removableIndex, 1);
+        usedWidth -= removed.offsetWidth + 3;
+        removed.hidden = true;
+      }
+      const overflowProjects = tabs
+        .filter((tab) => tab.hidden && tab.dataset.project !== "all")
+        .map((tab) => tab.dataset.project);
+      updateMoreMenu(overflowProjects);
+    }
+
+    function renderProjectTabs() {
+      const tabs = [createProjectTab("all", "全部", false)];
+      projects
+        .filter((project) => !closedProjects.has(project))
+        .forEach((project) => tabs.push(createProjectTab(project, project)));
+      projectTabs.replaceChildren(...tabs);
+      console.log("[项目 Tab 拖动] 已按顺序重新渲染", [...projects]);
+      requestAnimationFrame(fitProjectTabs);
+    }
+
+    function configureFilters() {
+      addOption(categoryFilter, "all", "全部分类");
+      categories.forEach((category) => addOption(categoryFilter, category.code, categoryLabel(category.code)));
+
+      addOption(statusFilter, "all", "全部状态");
+      Object.entries(statusLabels).forEach(([value, label]) => addOption(statusFilter, value, label));
+    }
+
+    function updateFilterAvailability() {
+      const viewEntries = entries.filter((entry) => (entry.hidden === true) === hiddenView);
+      const projectEntries = projectFilter.value === "all"
+        ? viewEntries
+        : viewEntries.filter((entry) => entry.project === projectFilter.value);
+      const availableCategories = new Set(projectEntries.map((entry) => entry.category));
+      const availableStatuses = new Set(projectEntries.map((entry) => entry.status));
+
+      [...categoryFilter.options].forEach((option) => {
+        option.disabled = option.value !== "all" && !availableCategories.has(option.value);
+      });
+      [...statusFilter.options].forEach((option) => {
+        option.disabled = option.value !== "all" && !availableStatuses.has(option.value);
+      });
+
+      if (categoryFilter.selectedOptions[0]?.disabled) categoryFilter.value = "all";
+      if (statusFilter.selectedOptions[0]?.disabled) statusFilter.value = "all";
+    }
+
+    function formatDate(value) {
+      if (!value) return "未识别";
+      return new Intl.DateTimeFormat(language, {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false
+      }).format(new Date(value));
+    }
+
+    function metaRow(label, value) {
+      const wrapper = document.createElement("div");
+      wrapper.className = "meta-row";
+      const caption = document.createElement("span");
+      caption.textContent = label;
+      const time = document.createElement("time");
+      time.textContent = formatDate(value);
+      if (value) time.dateTime = value;
+      wrapper.append(caption, time);
+      return wrapper;
+    }
+
+    function updateCollapsibleText(content, preserveExpanded = true) {
+      const text = content.querySelector(".entry-text");
+      const toggle = content.querySelector(".entry-toggle");
+      const wasExpanded = preserveExpanded && toggle.dataset.expanded === "true";
+      text.classList.remove("is-collapsed");
+      text.style.maxHeight = "none";
+      const lineHeight = Number.parseFloat(getComputedStyle(text).lineHeight);
+      const collapsedHeight = lineHeight * collapsedLines;
+      const needsToggle = text.scrollHeight > collapsedHeight + 1;
+      toggle.hidden = !needsToggle;
+      if (!needsToggle) {
+        toggle.dataset.expanded = "false";
+        toggle.textContent = "";
+        return;
+      }
+      if (wasExpanded) {
+        text.style.maxHeight = `${text.scrollHeight}px`;
+        toggle.dataset.expanded = "true";
+        toggle.textContent = "收起 ▴";
+      } else {
+        text.style.maxHeight = `${collapsedHeight}px`;
+        text.classList.add("is-collapsed");
+        toggle.dataset.expanded = "false";
+        toggle.textContent = "展开全文 ▾";
+      }
+    }
+
+    function createEntryContent(entry) {
+      const content = document.createElement("div");
+      content.className = "entry-content";
+      const text = document.createElement("div");
+      text.className = "entry-text";
+      renderEntryBody(text, entry);
+      const toggle = document.createElement("button");
+      toggle.className = "entry-toggle";
+      toggle.type = "button";
+      toggle.hidden = true;
+      toggle.dataset.expanded = "false";
+      toggle.addEventListener("click", () => {
+        const expand = toggle.dataset.expanded !== "true";
+        text.classList.toggle("is-collapsed", !expand);
+        text.style.maxHeight = expand
+          ? `${text.scrollHeight}px`
+          : `${Number.parseFloat(getComputedStyle(text).lineHeight) * collapsedLines}px`;
+        toggle.dataset.expanded = String(expand);
+        toggle.textContent = expand ? "收起 ▴" : "展开全文 ▾";
+      });
+      content.append(text, toggle);
+      requestAnimationFrame(() => updateCollapsibleText(content, false));
+      return content;
+    }
+
+    function splitSourceCells(raw) {
+      return raw.split(/\t+| {2,}/);
+    }
+
+    function appendMarkdownSegment(container, formattedLines, originalLines) {
+      if (!originalLines.length) return;
+      if (markdownRenderer && formattedLines) {
+        try {
+          const wrapper = document.createElement("div");
+          wrapper.innerHTML = markdownRenderer.render(formattedLines.join("\n"));
+          container.append(...wrapper.childNodes);
+          return;
+        } catch (error) {
+          console.warn("Markdown 片段渲染失败，已回退原文。", error);
+        }
+      }
+      const paragraph = document.createElement("p");
+      paragraph.style.whiteSpace = "pre-wrap";
+      paragraph.textContent = originalLines.join("\n");
+      container.append(paragraph);
+    }
+
+    function createSourceTable(lines, structure) {
+      const scroll = document.createElement("div");
+      scroll.className = "entry-table-scroll";
+      const table = document.createElement("table");
+      table.className = "entry-table";
+      const head = document.createElement("thead");
+      const body = document.createElement("tbody");
+      structure.line_ids.forEach((lineId) => {
+        const row = document.createElement("tr");
+        const isHeader = lineId === structure.header_line_id;
+        splitSourceCells(lines[lineId - 1]).forEach((cellText) => {
+          const cell = document.createElement(isHeader ? "th" : "td");
+          cell.textContent = cellText;
+          row.append(cell);
+        });
+        (isHeader ? head : body).append(row);
+      });
+      if (head.childNodes.length) table.append(head);
+      table.append(body);
+      scroll.append(table);
+      return scroll;
+    }
+
+    function createSuspectedTable(lines, fallback) {
+      const block = document.createElement("div");
+      block.className = "suspected-table-block";
+      const heading = document.createElement("div");
+      heading.className = "suspected-table-heading";
+      const badge = document.createElement("span");
+      badge.className = "suspected-table-badge";
+      badge.textContent = "疑似表格 · 保留原文";
+      const reason = document.createElement("span");
+      reason.className = "suspected-table-reason";
+      reason.textContent = fallback.reason;
+      const raw = document.createElement("pre");
+      raw.className = "suspected-table-raw";
+      raw.textContent = fallback.line_ids.map((lineId) => lines[lineId - 1]).join("\n");
+      heading.append(badge, reason);
+      block.append(heading, raw);
+      return block;
+    }
+
+    function renderEntryBody(container, entry) {
+      const originalLines = entry.text.split("\n");
+      const formattedLines = typeof entry.display_markdown === "string"
+        ? entry.display_markdown.split("\n")
+        : null;
+      const blocks = [
+        ...(entry._display_tables || []).map((structure) => ({ type: "table", structure })),
+        ...(entry._display_table_fallbacks || []).map((structure) => ({ type: "fallback", structure }))
+      ].sort((left, right) => left.structure.line_ids[0] - right.structure.line_ids[0]);
+      let nextLineIndex = 0;
+      blocks.forEach((block) => {
+        const startIndex = block.structure.line_ids[0] - 1;
+        appendMarkdownSegment(
+          container,
+          formattedLines?.slice(nextLineIndex, startIndex),
+          originalLines.slice(nextLineIndex, startIndex)
+        );
+        container.append(
+          block.type === "table"
+            ? createSourceTable(originalLines, block.structure)
+            : createSuspectedTable(originalLines, block.structure)
+        );
+        nextLineIndex = block.structure.line_ids.at(-1);
+      });
+      appendMarkdownSegment(
+        container,
+        formattedLines?.slice(nextLineIndex),
+        originalLines.slice(nextLineIndex)
+      );
+    }
+
+    function renderEntry(entry, index) {
+      const article = document.createElement("article");
+      article.className = "entry";
+      article.dataset.entryId = entry.id;
+      article.style.animationDelay = `${Math.min(index * 35, 210)}ms`;
+
+      const identity = document.createElement("div");
+      const project = document.createElement("p");
+      project.className = "project";
+      project.textContent = entry.project;
+      const category = document.createElement("span");
+      category.className = `category category-${entry.category}`;
+      category.textContent = categoryLabel(entry.category);
+      const action = document.createElement("button");
+      action.className = "entry-action";
+      action.type = "button";
+      action.textContent = hiddenView ? "恢复显示" : "隐藏";
+      action.title = hiddenView ? "将这条记录恢复到正常列表" : "将这条记录移到已隐藏";
+      action.disabled = !interactiveMode || !apiToken;
+      action.addEventListener("click", () => changeVisibility(entry, action));
+      const actions = document.createElement("div");
+      actions.className = "entry-actions";
+      actions.append(action);
+      if (hiddenView && interactiveMode && apiToken && purgeEnabled) {
+        const purge = document.createElement("button");
+        purge.className = "entry-action entry-action-danger";
+        purge.type = "button";
+        purge.textContent = "彻底删除";
+        purge.title = "永久清除工具内部保存的这条记录";
+        purge.addEventListener("click", () => openPurgeDialog(entry));
+        actions.append(purge);
+      }
+      identity.append(project, category, actions);
+
+      const content = createEntryContent(entry);
+
+      const meta = document.createElement("div");
+      meta.className = "entry-meta";
+      const status = document.createElement("span");
+      status.className = `status status-${entry.status}`;
+      status.textContent = statusLabels[entry.status] || entry.status;
+      meta.append(status, metaRow("记录时间", entry.record_time), metaRow("事件时间", entry.event_time));
+
+      article.append(identity, content, meta);
+      return article;
+    }
+
+    function setServiceStatus(message, isError = false) {
+      serviceStatus.textContent = message;
+      serviceStatus.style.color = isError ? "#ffd0c7" : "";
+    }
+
+    async function apiRequest(path, options = {}) {
+      const headers = {
+        "Content-Type": "application/json",
+        "X-Note-Token": apiToken,
+        ...(options.headers || {})
+      };
+      return window.fetch(path, { ...options, headers });
+    }
+
+    function setModelSettingsResult(message, isError = false) {
+      modelSettingsResult.textContent = message;
+      modelSettingsResult.classList.toggle("is-error", isError);
+    }
+
+    function setModelSettingsBusy(busy) {
+      modelSettingsTest.disabled = busy || document.querySelector('[name="model-provider"]:checked')?.value !== "cloud";
+      modelSettingsSave.disabled = busy || modelSettingsState === null;
+      modelSettingsClose.disabled = busy;
+    }
+
+    function updateModelSettingsVisibility() {
+      const provider = document.querySelector('[name="model-provider"]:checked')?.value || "ollama";
+      const isCloud = provider === "cloud";
+      cloudSettingsPanel.hidden = !isCloud;
+      ollamaSettingsPanel.hidden = isCloud;
+      modelSettingsTest.disabled = !isCloud;
+      clearApiKey.disabled = isCloud || !modelSettingsState?.api_key_configured;
+      if (isCloud) clearApiKey.checked = false;
+      document.querySelector("#openai-base-url").required = isCloud;
+      document.querySelector("#openai-model").required = isCloud;
+      cloudApiKey.required = isCloud && !modelSettingsState?.api_key_configured;
+      apiKeyRequired.hidden = !cloudApiKey.required;
+      cloudPrivacyAcknowledged.required = isCloud;
+    }
+
+    function populateModelSettings(payload) {
+      modelSettingsState = {
+        release_profile: payload.release_profile,
+        provider: payload.provider,
+        cloud_variant: "standard_openai",
+        api_key_configured: payload.api_key_configured === true,
+        ollama_model: payload.ollama_model || "未配置",
+        standard_openai: { ...modelSettingsDefaults.standard_openai, ...(payload.cloud_settings?.standard_openai || {}) }
+      };
+      ollamaModelStatus.textContent = modelSettingsState.ollama_model;
+      const selectedCloud = modelSettingsState[modelSettingsState.cloud_variant];
+      reprocessTargetModel.textContent = modelSettingsState.provider === "ollama"
+        ? `本地 ${modelSettingsState.ollama_model}`
+        : `云端 ${selectedCloud.model || "未配置"}`;
+      document.querySelector(`[name="model-provider"][value="${modelSettingsState.provider}"]`).checked = true;
+      document.querySelector("#openai-base-url").value = modelSettingsState.standard_openai.base_url;
+      document.querySelector("#openai-model").value = modelSettingsState.standard_openai.model;
+      document.querySelector("#openai-timeout").value = modelSettingsState.standard_openai.timeout_seconds;
+      document.querySelector("#openai-ca-bundle").value = modelSettingsState.standard_openai.ca_bundle_path;
+      cloudApiKey.value = "";
+      clearApiKey.checked = false;
+      cloudPrivacyAcknowledged.checked = false;
+      apiKeyStatus.textContent = modelSettingsState.api_key_configured ? "本机已保存 API Key" : "尚未保存 API Key";
+      modelSettingsDirty = false;
+      updateModelSettingsVisibility();
+    }
+
+    function collectModelSettings() {
+      return {
+        provider: document.querySelector('[name="model-provider"]:checked').value,
+        cloud_variant: "standard_openai",
+        standard_openai: {
+          base_url: document.querySelector("#openai-base-url").value.trim(),
+          model: document.querySelector("#openai-model").value.trim(),
+          timeout_seconds: Number(document.querySelector("#openai-timeout").value),
+          ca_bundle_path: document.querySelector("#openai-ca-bundle").value.trim()
+        }
+      };
+    }
+
+    function modelSettingsPayload(includeClear = false) {
+      const payload = {
+        settings: collectModelSettings(),
+        privacy_acknowledged: cloudPrivacyAcknowledged.checked
+      };
+      if (cloudApiKey.value) payload.api_key = cloudApiKey.value;
+      if (includeClear && clearApiKey.checked) payload.clear_api_key = true;
+      return payload;
+    }
+
+    async function readModelSettingsResponse(response) {
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        if (response.status === 409) throw new Error("整理正在进行，请完成后再试。");
+        throw new Error(payload.message || "模型设置操作失败。");
+      }
+      return payload;
+    }
+
+    async function openModelSettings() {
+      setModelSettingsResult("正在读取…");
+      modelSettingsDialog.showModal();
+      setModelSettingsBusy(true);
+      try {
+        const response = await window.fetch("/api/model-settings", { cache: "no-store" });
+        const payload = await readModelSettingsResponse(response);
+        populateModelSettings(payload);
+        reprocessPlanSection.hidden = !reprocessPlanEnabled || Boolean(payload.configuration_error);
+        if (reprocessPlanEnabled && !payload.configuration_error) {
+          try {
+            await loadReprocessOptions();
+          } catch (error) {
+            setReprocessResult(error.message || "无法读取重新整理范围。", { error: true });
+          }
+        }
+        setModelSettingsResult(
+          payload.configuration_error ? `配置需要修正：${payload.configuration_error}` : "",
+          Boolean(payload.configuration_error)
+        );
+      } catch (error) {
+        setModelSettingsResult(error.message || "无法读取模型设置。", true);
+      } finally {
+        setModelSettingsBusy(false);
+      }
+    }
+
+    async function testModelConnection() {
+      if (!modelSettingsForm.reportValidity()) return;
+      setModelSettingsBusy(true);
+      setModelSettingsResult("正在使用虚拟内容测试连接…");
+      try {
+        const response = await apiRequest("/api/model-settings/test", {
+          method: "POST",
+          body: JSON.stringify(modelSettingsPayload())
+        });
+        await readModelSettingsResponse(response);
+        setModelSettingsResult("连接测试成功；未发送任何真实笔记。", false);
+      } catch (error) {
+        setModelSettingsResult(error.message || "连接测试失败。", true);
+      } finally {
+        setModelSettingsBusy(false);
+      }
+    }
+
+    async function saveModelSettings() {
+      if (!modelSettingsForm.reportValidity()) return;
+      setModelSettingsBusy(true);
+      setModelSettingsResult("正在保存…");
+      try {
+        const response = await apiRequest("/api/model-settings", {
+          method: "POST",
+          body: JSON.stringify(modelSettingsPayload(true))
+        });
+        const payload = await readModelSettingsResponse(response);
+        populateModelSettings(payload);
+        reprocessPlanSection.hidden = !reprocessPlanEnabled;
+        setModelSettingsResult("设置已保存；已有笔记不会自动重新处理。", false);
+        setServiceStatus("模型设置已保存");
+        if (reprocessPlanEnabled) {
+          try {
+            await loadReprocessOptions();
+          } catch (error) {
+            setReprocessResult(error.message || "无法读取重新整理范围。", { error: true });
+          }
+        }
+      } catch (error) {
+        setModelSettingsResult(error.message || "模型设置保存失败。", true);
+      } finally {
+        setModelSettingsBusy(false);
+      }
+    }
+
+    async function loadReprocessOptions() {
+      const response = await window.fetch("/api/reprocess/options", { cache: "no-store" });
+      if (!response.ok) throw new Error("无法读取重新整理范围。");
+      reprocessOptionsState = await response.json();
+      reprocessProjectSearch.hidden = reprocessOptionsState.projects.length < 6;
+      reprocessProjectList.replaceChildren(...reprocessOptionsState.projects.map((project) => {
+        const label = document.createElement("label");
+        const input = document.createElement("input");
+        input.type = "checkbox";
+        input.name = "reprocess-project";
+        input.value = project;
+        input.checked = true;
+        input.addEventListener("change", () => { renderReprocessSources(); invalidateReprocessPlan(); });
+        label.append(input, document.createTextNode(project));
+        return label;
+      }));
+        applyReprocessProjectSearch();
+      renderReprocessSources();
+    }
+
+    function selectedReprocessProjects() {
+      return [...document.querySelectorAll('[name="reprocess-project"]:checked')].map((input) => input.value);
+    }
+
+    function applyReprocessProjectSearch() {
+      const query = reprocessProjectSearch.value.trim().toLowerCase();
+      reprocessProjectList.querySelectorAll("label").forEach((label) => {
+        label.hidden = !label.textContent.toLowerCase().includes(query);
+      });
+    }
+
+    function applyReprocessSourceSearch() {
+      const query = reprocessSourceSearch.value.trim().toLowerCase();
+      reprocessSourceList.querySelectorAll("label").forEach((label) => {
+        label.hidden = !label.dataset.search.includes(query);
+      });
+    }
+
+    function baseReprocessEntries() {
+      const selectedProjects = new Set(selectedReprocessProjects());
+      const visibility = document.querySelector('[name="reprocess-visibility"]:checked').value;
+      return entries.filter((entry) => {
+        const recordDate = String(entry.record_time || "").slice(0, 10);
+        return selectedProjects.has(entry.project)
+          && (!reprocessDateFrom.value || recordDate >= reprocessDateFrom.value)
+          && (!reprocessDateTo.value || recordDate <= reprocessDateTo.value)
+          && (visibility === "all" || (visibility === "hidden") === (entry.hidden === true));
+      });
+    }
+
+    function renderReprocessSources() {
+      if (!reprocessOptionsState) return;
+      const existingSources = [...document.querySelectorAll('[name="reprocess-source"]')];
+      const previousSelection = new Set(
+        existingSources.filter((input) => input.checked).flatMap((input) => input.value.split(","))
+      );
+      const counts = new Map();
+      baseReprocessEntries().forEach((entry) => {
+        const backend = entry.analysis_backend || "__missing__";
+        counts.set(backend, (counts.get(backend) || 0) + 1);
+      });
+      const grouped = new Map();
+      reprocessOptionsState.sources.forEach((source) => {
+        if (!source.current && !counts.has(source.id)) return;
+        const key = source.current ? "__current__" : source.id;
+        const existing = grouped.get(key);
+        if (existing) {
+          existing.ids.push(source.id);
+          existing.count += counts.get(source.id) || 0;
+        } else {
+          grouped.set(key, {...source, ids: [source.id], count: counts.get(source.id) || 0});
+        }
+      });
+      const sources = [...grouped.values()];
+      const hasPreviousMatch = sources.some((source) => source.ids.some((id) => previousSelection.has(id)));
+      reprocessSourceSearch.hidden = sources.length < 5;
+      reprocessSourceList.replaceChildren(...sources.map((source) => {
+        const label = document.createElement("label");
+        label.dataset.search = source.label.toLowerCase();
+        const input = document.createElement("input");
+        input.type = "checkbox";
+        input.name = "reprocess-source";
+        input.value = source.ids.join(",");
+        input.disabled = source.current && !reprocessAllowCurrent.checked;
+        input.checked = existingSources.length && hasPreviousMatch
+          ? source.ids.some((id) => previousSelection.has(id)) && !input.disabled
+          : !source.current && source.count > 0;
+        input.addEventListener("change", invalidateReprocessPlan);
+        const suffix = source.current ? " · 当前模型，默认跳过" : "";
+        label.append(input, document.createTextNode(`${source.label}：${source.count} 条${suffix}`));
+        return label;
+      }));
+      applyReprocessSourceSearch();
+    }
+
+    function setReprocessMode() {
+      const repair = document.querySelector('[name="reprocess-mode"]:checked').value === "repair";
+      reprocessSourceSection.hidden = repair;
+      reprocessModeHint.textContent = repair
+        ? "只补做缺失或降级的排版和表格；同一笔记的阶段可能来自不同模型。"
+        : "使用当前模型重新分析、排版，并仅在存在表格候选时识别表格。";
+      invalidateReprocessPlan();
+    }
+
+    function setReprocessResult(message, { error = false, cloud = false } = {}) {
+      reprocessResult.hidden = false;
+      reprocessResult.textContent = message;
+      reprocessResult.classList.toggle("is-error", error);
+      reprocessResult.classList.toggle("is-cloud", cloud && !error);
+    }
+
+    function invalidateReprocessPlan() {
+      reprocessPreviewVersion += 1;
+      currentReprocessPlan = null;
+      currentReprocessRequest = null;
+      reprocessConfirmation.hidden = true;
+      reprocessConfirmed.checked = false;
+      reprocessCloudConfirmed.checked = false;
+      reprocessExecute.disabled = true;
+      if (!reprocessResult.hidden) {
+        setReprocessResult("范围或处理内容已变化，请重新计算预计范围。");
+      }
+    }
+
+    function updateReprocessConfirmation() {
+      const cloudConfirmed = !currentReprocessPlan?.uses_cloud || reprocessCloudConfirmed.checked;
+      reprocessExecute.disabled = !reprocessExecuteEnabled
+        || !currentReprocessPlan
+        || !reprocessConfirmed.checked
+        || !cloudConfirmed;
+    }
+
+    async function previewReprocessPlan() {
+      if (modelSettingsDirty) {
+        setReprocessResult("请先保存上方模型设置，再计算重新处理范围。", { error: true });
+        return;
+      }
+      const selectedProjects = selectedReprocessProjects();
+      if (!selectedProjects.length) {
+        setReprocessResult("请至少选择一个项目。", { error: true });
+        return;
+      }
+      if (reprocessDateFrom.value && reprocessDateTo.value && reprocessDateFrom.value > reprocessDateTo.value) {
+        setReprocessResult("记录开始日期不能晚于结束日期。", { error: true });
+        return;
+      }
+      const mode = document.querySelector('[name="reprocess-mode"]:checked').value;
+      const sourceBackendIds = [...document.querySelectorAll('[name="reprocess-source"]:checked')]
+        .flatMap((input) => input.value.split(","));
+      if (mode === "full" && !sourceBackendIds.length) {
+        setReprocessResult("请选择至少一个原整理来源。", { error: true });
+        return;
+      }
+      const scope = {
+        type: "filters",
+        projects: selectedProjects,
+        record_date_from: reprocessDateFrom.value || null,
+        record_date_to: reprocessDateTo.value || null,
+        visibility: document.querySelector('[name="reprocess-visibility"]:checked').value
+      };
+      const request = {
+        mode,
+        scope,
+        source_backend_ids: mode === "full" ? sourceBackendIds : null,
+        allow_current_backend: reprocessAllowCurrent.checked
+      };
+      const previewVersion = ++reprocessPreviewVersion;
+      reprocessPreview.disabled = true;
+      setReprocessResult("正在计算预计范围…");
+      try {
+        const response = await apiRequest("/api/reprocess/plan", {
+          method: "POST",
+          body: JSON.stringify(request)
+        });
+        const plan = await response.json().catch(() => ({}));
+        if (previewVersion !== reprocessPreviewVersion) return;
+        if (!response.ok) {
+          if (response.status === 409) throw new Error("整理正在进行，请完成后再计算。");
+          throw new Error(plan.message || "无法计算重新处理范围。");
+        }
+        const protectedText = plan.protected_user_edits
+          ? ` ${plan.protected_user_edits} 条人工修改过的分类将受到保护。`
+          : "";
+        const cloudText = plan.has_work && plan.uses_cloud
+          ? " 若继续执行，选中记录的正文将发送到当前云端服务，并可能产生费用。"
+          : plan.has_work ? " 若继续执行，将使用本机模型。" : "";
+        const workText = ` 工作量：分类 ${plan.work_items.analysis} 条、排版 ${plan.work_items.display} 条、表格候选调用 ${plan.estimated_table_model_calls} 次。`;
+        currentReprocessPlan = plan;
+        currentReprocessRequest = request;
+        reprocessConfirmed.checked = false;
+        reprocessCloudConfirmed.checked = false;
+        reprocessCloudConfirmRow.hidden = !plan.uses_cloud;
+        reprocessConfirmation.hidden = !reprocessExecuteEnabled || !plan.has_work;
+        updateReprocessConfirmation();
+        const noWorkText = plan.has_work ? "" : " 所选范围没有可执行的重处理工作。";
+        const tokens = plan.estimated_input_tokens;
+        setReprocessResult(
+          `预计选择 ${plan.selected_records} 条记录，共 ${plan.estimated_model_calls} 次模型调用。${workText}正文与表格候选约 ${plan.estimated_input_characters} 个字符，对应约 ${tokens.min}–${tokens.max} 输入 tokens；不含固定提示词、schema 和输出 tokens（本地粗略估算，不代表实际计费）。${protectedText}${cloudText}${noWorkText} 当前仅完成计算，尚未执行。`,
+          { cloud: plan.uses_cloud }
+        );
+      } catch (error) {
+        if (previewVersion !== reprocessPreviewVersion) return;
+        setReprocessResult(error.message || "无法计算重新处理范围。", { error: true });
+      } finally {
+        reprocessPreview.disabled = false;
+      }
+    }
+
+    async function executeReprocessPlan() {
+      if (!currentReprocessPlan || !currentReprocessRequest) return;
+      updateReprocessConfirmation();
+      if (reprocessExecute.disabled) return;
+      reprocessExecute.disabled = true;
+      reprocessExecute.textContent = "正在启动…";
+      try {
+        const response = await apiRequest("/api/reprocess", {
+          method: "POST",
+          body: JSON.stringify({
+            ...currentReprocessRequest,
+            plan_id: currentReprocessPlan.plan_id,
+            confirmed: true,
+            cloud_acknowledged: currentReprocessPlan.uses_cloud
+              ? reprocessCloudConfirmed.checked
+              : false
+          })
+        });
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          if (response.status === 409 && payload.error === "reprocess_plan_changed") {
+            invalidateReprocessPlan();
+            throw new Error("记录或模型设置已变化，请重新计算预计范围。");
+          }
+          if (response.status === 409) throw new Error("当前有其他整理任务正在运行，请稍后再试。");
+          throw new Error(payload.message || "无法启动重新处理任务。");
+        }
+        if (!payload.job?.id) throw new Error("服务没有返回任务编号。");
+        modelSettingsDialog.close();
+        organizeButton.disabled = true;
+        updateOrganizeProgress(payload.job);
+        const finishedJob = await pollOrganizeJob(payload.job.id);
+        if (finishedJob.status === "cancelled") {
+          organizeButton.disabled = false;
+          reprocessExecute.textContent = "确认并开始重新处理";
+          setServiceStatus("重新处理已取消；下次请重新计算范围");
+          return;
+        }
+        setServiceStatus("重新处理完成，页面即将刷新…");
+        await new Promise((resolve) => window.setTimeout(resolve, 2000));
+        window.location.reload();
+      } catch (error) {
+        organizeButton.disabled = false;
+        reprocessExecute.textContent = "确认并开始重新处理";
+        updateReprocessConfirmation();
+        setReprocessResult(error.message || "重新处理失败。", { error: true });
+        setServiceStatus(error.message || "重新处理失败", true);
+      }
+    }
+
+    async function changeVisibility(entry, button) {
+      const action = hiddenView ? "restore" : "hide";
+      button.disabled = true;
+      setServiceStatus(action === "hide" ? "正在隐藏…" : "正在恢复…");
+      try {
+        const response = await apiRequest(
+          `/api/records/${encodeURIComponent(entry.id)}/${action}`,
+          { method: "POST", body: "{}" }
+        );
+        const payload = await response.json();
+        if (!response.ok) {
+          if (response.status === 409) throw new Error("整理正在进行，请完成后再试。");
+          throw new Error("操作没有保存，请稍后重试。");
+        }
+        entry.hidden = payload.hidden;
+        if (payload.hidden) entry.hidden_at = new Date().toISOString();
+        else delete entry.hidden_at;
+        setServiceStatus(payload.html_updated ? "操作已保存" : "操作已保存；离线页面将在下次整理时更新");
+        render();
+      } catch (error) {
+        button.disabled = false;
+        setServiceStatus(error.message || "操作失败", true);
+      }
+    }
+
+    function openPurgeDialog(entry) {
+      if (!hiddenView || entry.hidden !== true || !interactiveMode || !apiToken || !purgeEnabled) return;
+      pendingPurgeEntry = entry;
+      purgeSource.textContent = `来源文件：${entry.source_file || "未知"}`;
+      purgeConfirm.disabled = false;
+      purgeCancel.disabled = false;
+      purgeDialog.showModal();
+      purgeCancel.focus();
+    }
+
+    async function confirmPurge() {
+      const entry = pendingPurgeEntry;
+      if (!entry) return;
+      purgeConfirm.disabled = true;
+      purgeCancel.disabled = true;
+      purgeConfirm.textContent = "正在删除…";
+      try {
+        const response = await apiRequest(
+          `/api/records/${encodeURIComponent(entry.id)}/purge`,
+          { method: "POST", body: "{}" }
+        );
+        const payload = await response.json();
+        if (!response.ok) {
+          if (response.status === 409) throw new Error("记录状态已变化，或当前有其他操作正在进行。请刷新后重试。");
+          if (response.status === 503) throw new Error("彻底删除功能尚未准备好。");
+          throw new Error("彻底删除失败，原数据已保留。请稍后重试。");
+        }
+        if (payload.deleted !== true || payload.record_id !== entry.id) {
+          throw new Error("服务返回结果不完整，请刷新页面确认记录状态。");
+        }
+        const entryIndex = entries.findIndex((item) => item.id === entry.id);
+        if (entryIndex >= 0) entries.splice(entryIndex, 1);
+        purgeDialog.close("deleted");
+        purgeReminderText.textContent = `请立即从原始 TXT“${entry.source_file || "来源文件"}”中手动删除这条内容；否则下次点击整理时，它会重新出现。`;
+        purgeReminder.hidden = false;
+        setServiceStatus("工具内部数据已彻底删除");
+        pendingPurgeEntry = null;
+        render();
+      } catch (error) {
+        purgeConfirm.disabled = false;
+        purgeCancel.disabled = false;
+        setServiceStatus(error.message || "彻底删除失败", true);
+      } finally {
+        purgeConfirm.textContent = "确认删除";
+      }
+    }
+
+    async function pollOrganizeJob(jobId) {
+      while (true) {
+        const response = await window.fetch(`/api/jobs/${encodeURIComponent(jobId)}`);
+        if (!response.ok) throw new Error("无法读取整理进度。");
+        const { job } = await response.json();
+        updateOrganizeProgress(job);
+        if (job.status === "succeeded" || job.status === "cancelled") return job;
+        if (job.status === "failed") throw new Error(job.error || job.progress?.message || "整理失败。");
+        await new Promise((resolve) => window.setTimeout(resolve, 1000));
+      }
+    }
+
+    function formatElapsed(totalSeconds) {
+      const safeSeconds = Math.max(0, Math.floor(totalSeconds));
+      const hours = Math.floor(safeSeconds / 3600);
+      const minutes = Math.floor((safeSeconds % 3600) / 60);
+      const seconds = safeSeconds % 60;
+      return hours
+        ? `${hours}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`
+        : `${minutes}:${String(seconds).padStart(2, "0")}`;
+    }
+
+    function refreshElapsedTime() {
+      if (!activeOrganizeJob?.started_at) {
+        progressElapsed.textContent = "0:00";
+        return;
+      }
+      const now = Date.now();
+      const startedAt = Date.parse(activeOrganizeJob.started_at);
+      progressElapsed.textContent = formatElapsed((now - startedAt) / 1000);
+      const detail = activeOrganizeJob.progress || {};
+      if (activeOrganizeJob.status === "cancelling") {
+        const requestedAt = Date.parse(detail.updated_at || new Date().toISOString());
+        const cancelElapsed = Math.max(0, (now - requestedAt) / 1000);
+        const waitLimit = Math.max(1, Number(activeOrganizeJob.cancel_wait_seconds) || 300);
+        const remaining = waitLimit - cancelElapsed;
+        const estimate = remaining > 0
+          ? `按当前超时设置，预计最多还需约 ${formatElapsed(remaining)}`
+          : "已超过预计上限，仍在等待当前网络请求返回";
+        progressMessage.textContent = `已请求取消；正在等待当前模型调用结束。已等待 ${formatElapsed(cancelElapsed)}；${estimate}，通常会更快。不会生成新页面。`;
+        return;
+      }
+      if (detail.stage === "classifying" && detail.updated_at) {
+        const itemSeconds = (now - Date.parse(detail.updated_at)) / 1000;
+        if (itemSeconds >= 180) {
+          progressMessage.textContent = `${detail.message} 本条已等待超过 3 分钟；本地 AI 可能较忙，可继续等待，或刷新页面后重试。`;
+        }
+      }
+    }
+
+    function updateOrganizeProgress(job) {
+      activeOrganizeJob = job;
+      const detail = job.progress || {};
+      const percent = Math.max(0, Math.min(100, Number(detail.percent) || 0));
+      const stage = detail.stage || (job.status === "queued" ? "queued" : "starting");
+      organizeProgress.hidden = false;
+      const terminal = ["succeeded", "failed", "cancelled"].includes(job.status);
+      organizeProgress.classList.toggle("is-running", !terminal);
+      organizeProgress.classList.toggle("is-complete", job.status === "succeeded");
+      organizeProgress.classList.toggle("is-failed", job.status === "failed");
+      organizeProgress.classList.toggle("is-cancelled", job.status === "cancelled");
+      const itemPosition = detail.current != null && detail.total != null && detail.total > 0
+        ? ` · 第 ${detail.current}/${detail.total} 条`
+        : "";
+      progressLabel.textContent = `${detail.label || "正在整理"}${itemPosition}`;
+      progressMessage.textContent = detail.message || "正在准备整理…";
+      progressDismiss.hidden = !["failed", "cancelled"].includes(job.status);
+      progressCancel.hidden = terminal || stage === "rebuilding";
+      progressCancel.disabled = job.status === "cancelling";
+      progressCancel.textContent = job.status === "cancelling" ? "正在安全取消…" : "取消整理";
+      progressPercent.textContent = stage === "classifying" ? "逐条处理中" : `${percent}%`;
+      progressFill.style.width = `${percent}%`;
+      progressTrack.setAttribute("aria-valuenow", String(percent));
+      const currentIndex = progressStageOrder.indexOf(stage);
+      progressSteps.forEach((step) => {
+        const stepIndex = progressStageOrder.indexOf(step.dataset.progressStage);
+        step.classList.toggle("is-current", stepIndex === currentIndex && !terminal);
+        step.classList.toggle("is-done", job.status === "succeeded" || (currentIndex >= 0 && stepIndex < currentIndex));
+      });
+      setServiceStatus(
+        job.status === "failed" ? "整理失败"
+          : job.status === "succeeded" ? "整理完成"
+            : job.status === "cancelled" ? "整理已取消"
+              : job.status === "cancelling" ? "正在安全取消"
+                : "整理正在运行"
+      );
+      refreshElapsedTime();
+      if (!terminal && elapsedTimer === null) {
+        elapsedTimer = window.setInterval(refreshElapsedTime, 1000);
+      }
+      if (terminal && elapsedTimer !== null) {
+        window.clearInterval(elapsedTimer);
+        elapsedTimer = null;
+      }
+    }
+
+    async function startOrganize() {
+      organizeButton.disabled = true;
+      organizeButton.textContent = "正在整理…";
+      setServiceStatus("正在启动整理…");
+      updateOrganizeProgress({
+        status: "queued",
+        progress: { stage: "queued", label: "等待开始", message: "整理任务正在创建…", percent: 0 }
+      });
+      try {
+        const response = await apiRequest("/api/organize", { method: "POST", body: "{}" });
+        const payload = await response.json();
+        const jobId = response.status === 409 ? payload.job_id : payload.job?.id;
+        if (!jobId) throw new Error("无法启动整理任务。");
+        const finishedJob = await pollOrganizeJob(jobId);
+        if (finishedJob.status === "cancelled") {
+          organizeButton.disabled = false;
+          organizeButton.textContent = "整理";
+          setServiceStatus("整理已取消；下次会继续未完成部分");
+          return;
+        }
+        setServiceStatus("整理完成，页面即将刷新…");
+        await new Promise((resolve) => window.setTimeout(resolve, 2000));
+        window.location.reload();
+      } catch (error) {
+        organizeButton.disabled = false;
+        organizeButton.textContent = "整理";
+        if (elapsedTimer !== null) {
+          window.clearInterval(elapsedTimer);
+          elapsedTimer = null;
+        }
+        organizeProgress.classList.remove("is-running", "is-complete");
+        organizeProgress.classList.add("is-failed");
+        progressLabel.textContent = "整理失败";
+        progressMessage.textContent = error.message || "整理失败，请稍后重试。";
+        progressDismiss.hidden = false;
+        setServiceStatus(error.message || "整理失败", true);
+      }
+    }
+
+    async function cancelOrganize() {
+      const jobId = activeOrganizeJob?.id;
+      if (!jobId || progressCancel.disabled) return;
+      progressCancel.disabled = true;
+      progressCancel.textContent = "正在安全取消…";
+      try {
+        const response = await apiRequest(`/api/jobs/${encodeURIComponent(jobId)}/cancel`, {
+          method: "POST",
+          body: "{}"
+        });
+        const payload = await response.json().catch(() => ({}));
+        if (response.status === 409) throw new Error("页面重建已经开始，请等待完成。");
+        if (!response.ok) throw new Error("无法请求取消，请继续等待当前任务。");
+        updateOrganizeProgress(payload.job);
+      } catch (error) {
+        progressCancel.disabled = false;
+        progressCancel.textContent = "取消整理";
+        setServiceStatus(error.message || "取消请求失败", true);
+      }
+    }
+
+    async function initializeInteractiveMode() {
+      if (!interactiveMode) {
+        organizeButton.disabled = true;
+        modelSettingsButton.disabled = true;
+        diagnosticsButton.disabled = true;
+        hiddenToggle.disabled = false;
+        setServiceStatus("离线只读模式");
+        return;
+      }
+      try {
+        const response = await window.fetch("/api/session", { cache: "no-store" });
+        if (!response.ok) throw new Error();
+    const session = await response.json();
+    apiToken = session.token;
+    purgeEnabled = session.capabilities?.purge === true;
+    modelSettingsEnabled = session.capabilities?.model_settings === true;
+    diagnosticsEnabled = session.capabilities?.diagnostics === true;
+    reprocessPlanEnabled = session.capabilities?.reprocess_plan === true;
+    reprocessExecuteEnabled = session.capabilities?.reprocess_execute === true;
+        organizeButton.disabled = false;
+      modelSettingsButton.disabled = !modelSettingsEnabled;
+      diagnosticsButton.disabled = !diagnosticsEnabled;
+      reprocessPlanSection.hidden = !reprocessPlanEnabled;
+        hiddenToggle.disabled = false;
+        setServiceStatus("本地操作模式");
+        render();
+      } catch (error) {
+        organizeButton.disabled = true;
+        modelSettingsButton.disabled = true;
+        diagnosticsButton.disabled = true;
+        hiddenToggle.disabled = false;
+        setServiceStatus("本地服务不可用，仅可查看", true);
+      }
+    }
+
+    function diagnosticSummary(report) {
+      return [
+        "My Notes Tool diagnostic",
+        `Task: ${report.task_id || "unknown"}`,
+        `Finished: ${report.finished_at || "unknown"}`,
+        `Status: ${report.status || "unknown"}`,
+        `Stage: ${report.stage || "unknown"}`,
+        `Code: ${report.error_code || "unknown"}`,
+        `Summary: ${report.summary || "unknown"}`,
+        `Action: ${report.action || "unknown"}`,
+        `Duration: ${report.duration_seconds ?? "unknown"}s`,
+        `Environment: ${report.environment?.platform || "unknown"}, Python ${report.environment?.python || "unknown"}`,
+        "Privacy: no note text, secrets, URLs, or full paths included."
+      ].join("\n");
+    }
+
+    function renderDiagnostics() {
+      diagnosticsList.replaceChildren(...diagnosticReports.map((report) => {
+        const item = document.createElement("section");
+        item.className = "diagnostic-item";
+        const title = document.createElement("strong");
+        title.textContent = report.summary || "整理任务";
+        const meta = document.createElement("p");
+        meta.className = "diagnostic-meta";
+        const finished = report.finished_at ? new Date(report.finished_at).toLocaleString() : "时间未知";
+        meta.textContent = `${finished} · ${report.status || "unknown"} · `;
+        const code = document.createElement("span");
+        code.className = "diagnostic-code";
+        code.textContent = report.error_code || "unknown";
+        meta.append(code);
+        const action = document.createElement("p");
+        action.className = "diagnostic-action";
+        action.textContent = report.action || "";
+        item.append(title, meta, action);
+        return item;
+      }));
+      diagnosticsEmpty.hidden = diagnosticReports.length !== 0;
+      diagnosticsCopy.disabled = diagnosticReports.length === 0;
+    }
+
+    async function openDiagnostics() {
+      const response = await window.fetch("/api/diagnostics", { cache: "no-store" });
+      if (!response.ok) throw new Error("无法读取本地诊断记录。");
+      const payload = await response.json();
+      diagnosticReports = Array.isArray(payload.reports) ? payload.reports : [];
+      renderDiagnostics();
+      diagnosticsDialog.showModal();
+    }
+
+    async function copyLatestDiagnostic() {
+      if (!diagnosticReports.length) return;
+      await navigator.clipboard.writeText(diagnosticSummary(diagnosticReports[0]));
+      diagnosticsCopy.textContent = "已复制";
+      window.setTimeout(() => { diagnosticsCopy.textContent = "复制最新摘要"; }, 1500);
+    }
+
+    function render() {
+      updateFilterAvailability();
+      const filtered = entries.filter((entry) => {
+        return (entry.hidden === true) === hiddenView
+          && (projectFilter.value === "all" || entry.project === projectFilter.value)
+          && (categoryFilter.value === "all" || entry.category === categoryFilter.value)
+          && (statusFilter.value === "all" || entry.status === statusFilter.value);
+      });
+
+      filtered.sort((left, right) => {
+        if (sortOrder.value === "record-asc") return left.record_time.localeCompare(right.record_time);
+        if (sortOrder.value === "event-desc") {
+          if (!left.event_time) return 1;
+          if (!right.event_time) return -1;
+          return right.event_time.localeCompare(left.event_time);
+        }
+        return right.record_time.localeCompare(left.record_time);
+      });
+
+      entriesElement.replaceChildren(...filtered.map(renderEntry));
+      entriesElement.hidden = filtered.length === 0;
+      emptyElement.hidden = filtered.length !== 0;
+      visibleCount.textContent = String(filtered.length);
+      const hiddenTotal = entries.filter((entry) => entry.hidden === true).length;
+      hiddenToggle.textContent = hiddenView ? "× 关闭隐藏区" : `已隐藏 (${hiddenTotal})`;
+      hiddenToggle.title = hiddenView ? "退出隐藏区并回到主页面" : "查看已隐藏的记录";
+      hiddenToggle.setAttribute("aria-pressed", String(hiddenView));
+      hiddenToggle.classList.toggle("is-active", hiddenView);
+
+      const projectName = projectFilter.value === "all" ? "全部笔记" : projectFilter.value;
+      sectionTitle.textContent = hiddenView ? `已隐藏的记录 (${hiddenTotal})` : projectName;
+      const active = [
+        categoryFilter.value === "all" ? null : categoryLabel(categoryFilter.value),
+        statusFilter.value === "all" ? null : statusLabels[statusFilter.value]
+      ].filter(Boolean);
+      filterDescription.textContent = active.length
+        ? active.join(" · ")
+        : hiddenView ? "这些记录仍被完整保留，可随时恢复" : "跨项目查看所有已整理记录";
+    }
+
+    loadProjectLayout();
+    saveProjectLayout();
+    configureFilters();
+    updateFilterAvailability();
+    renderProjectTabs();
+    [categoryFilter, statusFilter, sortOrder].forEach((control) => {
+      control.addEventListener("change", render);
+    });
+    new ResizeObserver(fitProjectTabs).observe(projectTabs);
+    let collapseResizeTimer;
+    window.addEventListener("resize", () => {
+      window.clearTimeout(collapseResizeTimer);
+      collapseResizeTimer = window.setTimeout(() => {
+        document.querySelectorAll(".entry-content").forEach((content) => {
+          updateCollapsibleText(content);
+        });
+      }, 100);
+    });
+    document.querySelector("#reset").addEventListener("click", () => {
+      projectFilter.value = "all";
+      categoryFilter.value = "all";
+      statusFilter.value = "all";
+      sortOrder.value = "record-desc";
+      renderProjectTabs();
+      render();
+    });
+    organizeButton.addEventListener("click", startOrganize);
+    modelSettingsButton.addEventListener("click", openModelSettings);
+    diagnosticsButton.addEventListener("click", () => {
+      openDiagnostics().catch((error) => setServiceStatus(error.message, true));
+    });
+    diagnosticsClose.addEventListener("click", () => diagnosticsDialog.close());
+    diagnosticsCopy.addEventListener("click", () => {
+      copyLatestDiagnostic().catch(() => setServiceStatus("复制诊断摘要失败", true));
+    });
+    modelSettingsClose.addEventListener("click", () => modelSettingsDialog.close());
+    modelSettingsDialog.addEventListener("close", invalidateReprocessPlan);
+    modelSettingsTest.addEventListener("click", testModelConnection);
+    modelSettingsSave.addEventListener("click", saveModelSettings);
+    reprocessPreview.addEventListener("click", previewReprocessPlan);
+    reprocessExecute.addEventListener("click", executeReprocessPlan);
+    reprocessConfirmed.addEventListener("change", updateReprocessConfirmation);
+    reprocessCloudConfirmed.addEventListener("change", updateReprocessConfirmation);
+    document.querySelectorAll('[name="reprocess-mode"]').forEach((control) => control.addEventListener("change", setReprocessMode));
+    document.querySelectorAll('[name="reprocess-visibility"]').forEach((control) => control.addEventListener("change", () => { renderReprocessSources(); invalidateReprocessPlan(); }));
+    [reprocessDateFrom, reprocessDateTo].forEach((control) => control.addEventListener("change", () => { renderReprocessSources(); invalidateReprocessPlan(); }));
+    reprocessAllowCurrent.addEventListener("change", () => {
+      renderReprocessSources();
+      reprocessSourceList.querySelectorAll('input[name="reprocess-source"]:not(:disabled)').forEach((input) => {
+        const source = reprocessOptionsState.sources.find((item) => input.value.split(",").includes(item.id));
+        if (source?.current) input.checked = reprocessAllowCurrent.checked;
+      });
+      invalidateReprocessPlan();
+    });
+    reprocessProjectSearch.addEventListener("input", applyReprocessProjectSearch);
+    reprocessSourceSearch.addEventListener("input", applyReprocessSourceSearch);
+    document.querySelector("#reprocess-project-all").addEventListener("click", () => {
+      reprocessProjectList.querySelectorAll('input:not(:checked)').forEach((input) => { input.checked = true; });
+      renderReprocessSources(); invalidateReprocessPlan();
+    });
+    document.querySelector("#reprocess-project-none").addEventListener("click", () => {
+      reprocessProjectList.querySelectorAll('input:checked').forEach((input) => { input.checked = false; });
+      renderReprocessSources(); invalidateReprocessPlan();
+    });
+    document.querySelector("#reprocess-project-invert").addEventListener("click", () => {
+      reprocessProjectList.querySelectorAll("label:not([hidden]) input").forEach((input) => { input.checked = !input.checked; });
+      renderReprocessSources(); invalidateReprocessPlan();
+    });
+    document.querySelectorAll('[name="model-provider"]').forEach((control) => {
+      control.addEventListener("change", updateModelSettingsVisibility);
+    });
+    document.querySelectorAll(
+      '[name="model-provider"], #cloud-settings-panel input, #cloud-settings-panel select'
+    ).forEach((control) => control.addEventListener("change", () => {
+      modelSettingsDirty = true;
+      invalidateReprocessPlan();
+    }));
+    cloudApiKey.addEventListener("input", () => {
+      if (cloudApiKey.value) clearApiKey.checked = false;
+    });
+    clearApiKey.addEventListener("change", () => {
+      if (clearApiKey.checked) cloudApiKey.value = "";
+    });
+    purgeConfirm.addEventListener("click", confirmPurge);
+    purgeDialog.addEventListener("close", () => {
+      if (purgeDialog.returnValue !== "deleted") pendingPurgeEntry = null;
+      purgeConfirm.textContent = "确认删除";
+      purgeConfirm.disabled = false;
+      purgeCancel.disabled = false;
+    });
+    purgeReminderClose.addEventListener("click", () => {
+      purgeReminder.hidden = true;
+    });
+    progressDismiss.addEventListener("click", () => {
+      organizeProgress.hidden = true;
+      progressDismiss.hidden = true;
+      activeOrganizeJob = null;
+    });
+    progressCancel.addEventListener("click", cancelOrganize);
+    hiddenToggle.addEventListener("click", () => {
+      hiddenView = !hiddenView;
+      projectFilter.value = "all";
+      categoryFilter.value = "all";
+      statusFilter.value = "all";
+      renderProjectTabs();
+      render();
+    });
+    render();
+    initializeInteractiveMode();
+  </script>
+</body>
+</html>

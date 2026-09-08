@@ -1,0 +1,32 @@
+# macOS and editors
+.DS_Store
+.vscode/
+.idea/
+
+# Python
+__pycache__/
+*.py[cod]
+
+# Local secrets and model configuration
+.env
+.env.*
+*.pem
+secrets.json
+model-settings.json
+deployment.json
+
+# Runtime output and logs
+data/*.log
+data/*.log.*
+data/*.lock
+data/.organize-cancel-*
+data/.purge-transaction-*/
+
+# Test and coverage artifacts
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Release archives
+*.zip
+*.tar.gz

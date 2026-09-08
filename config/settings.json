@@ -1,0 +1,28 @@
+{
+  "record_separator": {
+    "blank_lines": 3
+  },
+  "watcher": {
+    "poll_interval_seconds": 300,
+    "log_empty_scans": true,
+    "diff": {
+      "update_similarity_threshold": 0.85,
+      "short_record_similarity_threshold": 0.95,
+      "short_record_character_limit": 80,
+      "minimum_match_margin": 0.10
+    },
+    "logging": {
+      "max_bytes": 1048576,
+      "backup_count": 3
+    }
+  },
+  "display": {
+    "language": "zh-CN",
+    "collapsed_lines": 4
+  },
+  "ollama": {
+    "base_url": "http://localhost:11434",
+    "model": "qwen3:4b",
+    "timeout_seconds": 300
+  }
+}

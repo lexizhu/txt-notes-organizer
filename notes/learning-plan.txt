@@ -1,0 +1,23 @@
+Local AI learning plan
+
+1. Learn how the note separator works
+2. Compare local and cloud model privacy
+3. Practice restoring a hidden record
+
+Study topics
+- JSON source-of-truth design
+- Append-only event logs
+- Offline HTML rendering
+  - Embedded data
+  - Embedded Markdown renderer
+
+Finish this fictional study plan by October 10, 2026.
+
+
+
+Notes from a completed tutorial
+
+Completed the fictional tutorial about atomic file replacement yesterday. The key idea was to write a temporary file, flush it, and replace the destination only after validation succeeds.
+
+
+

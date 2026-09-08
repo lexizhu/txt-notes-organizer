@@ -1,0 +1,26 @@
+Fictional weekly planning meeting
+
+Date: September 2, 2026
+
+Decisions
+- Keep the first-run experience simple
+- Use local processing by default
+- Include sample notes for evaluation
+
+Risks
+- A slow local model may make the first run take several minutes
+- Cloud APIs may create usage charges
+
+Next steps
+1. Review the fictional demo data
+2. Capture screenshots
+3. Publish the draft guide
+
+
+
+Fictional retrospective notes
+
+The team discussed what worked well and what could improve. These notes describe a past meeting and are not a request to perform new work.
+
+
+
